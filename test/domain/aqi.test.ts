@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BAND_IDS, bandFor, bandRank, naqi, subIndex } from '../../src/domain/aqi';
+import { airHour } from '../fixtures';
+
+const START = '2026-12-01T06:00';
 
 describe('subIndex', () => {
   it.each([
@@ -28,8 +31,8 @@ describe('subIndex', () => {
 
 describe('naqi', () => {
   it('reports the worse of the two pollutants', () => {
-    expect(naqi({ pm2_5: 30, pm10: 300 })).toBe(250);
-    expect(naqi({ pm2_5: 200, pm10: 20 })).toBe(362);
+    expect(naqi(airHour(START, 30, 300))).toBe(250);
+    expect(naqi(airHour(START, 200, 20))).toBe(362);
   });
 });
 

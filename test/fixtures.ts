@@ -1,7 +1,8 @@
 /** Shared test data and fakes: forecasts, households, model replies and plan requests. */
-import type { Forecast, Hours } from '../src/domain/forecast';
+import type { AirHour, Forecast, Hours } from '../src/domain/forecast';
 import type { Household } from '../src/domain/household';
 import type { Trip } from '../src/domain/trips';
+import { concentration, kilometres } from '../src/domain/units';
 import type { PlanBody } from '../src/http/plan-request';
 import type { PlanRequest } from '../src/services/coach';
 import type { AirSource, Logger, ModelRequest, TextModel } from '../src/services/ports';
@@ -12,19 +13,25 @@ const SPECIAL_HOURS = new Map([
   [23, 300],
 ]);
 
+/** One forecast hour; PM10 defaults to PM2.5. */
+export function airHour(time: string, pm2_5: number, pm10: number = pm2_5): AirHour {
+  return { time, pm2_5: concentration(pm2_5), pm10: concentration(pm10) };
+}
+
+/** A non-empty list of hours, as the forecast type requires. */
+export function hoursOf(first: AirHour, ...rest: AirHour[]): Hours {
+  return [first, ...rest];
+}
+
 /** 24 hours from 06:00 on 1 Dec; PM2.5 dips to 40 at 15:00 and peaks at 300 at 23:00. */
 export function dayOfHours(start = 6): Hours {
-  const hours = Array.from({ length: 24 }, (_, i) => {
+  const hourAt = (i: number): AirHour => {
     const clock = (start + i) % 24;
     const day = start + i < 24 ? '01' : '02';
     const pm2_5 = SPECIAL_HOURS.get(clock) ?? 150 + i;
-    return {
-      time: `2026-12-${day}T${String(clock).padStart(2, '0')}:00`,
-      pm2_5,
-      pm10: pm2_5 * 1.4,
-    };
-  });
-  return hours as unknown as Hours;
+    return airHour(`2026-12-${day}T${String(clock).padStart(2, '0')}:00`, pm2_5, pm2_5 * 1.4);
+  };
+  return hoursOf(hourAt(0), ...Array.from({ length: 23 }, (_, i) => hourAt(i + 1)));
 }
 
 /** A forecast for Lucknow built from `dayOfHours`. */
@@ -41,7 +48,19 @@ export function forecast(hours: Hours = dayOfHours()): Forecast {
 }
 
 /** A typical commute by car. */
-export const COMMUTE: Trip = { label: 'Commute', km: 8, mode: 'car', departHour: 9, perWeek: 10 };
+export const COMMUTE: Trip = {
+  label: 'Commute',
+  km: kilometres(8),
+  mode: 'car',
+  departHour: 9,
+  perWeek: 10,
+};
+
+/** The commute with some fields changed; `km` is given as a plain number. */
+export function trip(overrides: Partial<Omit<Trip, 'km'>> & { km?: number } = {}): Trip {
+  const { km, ...rest } = overrides;
+  return { ...COMMUTE, ...rest, ...(km === undefined ? {} : { km: kilometres(km) }) };
+}
 
 /** A household with a child, LPG cooking, no purifier and metro nearby. */
 export function household(overrides: Partial<Household> = {}): Household {

@@ -26,7 +26,8 @@ const importsOf = (path: string) =>
 const LAYERS: Record<string, RegExp> = {
   'src/domain/': /^\.\/[\w-]+$/u,
   'src/services/': /^(\.\/[\w-]+|\.\.\/domain\/[\w-]+|zod)$/u,
-  'src/adapters/': /^(\.\/[\w-]+|\.\.\/services\/(problem|ports)|zod|@google\/genai)$/u,
+  'src/adapters/':
+    /^(\.\/[\w-]+|\.\.\/domain\/units|\.\.\/services\/(problem|ports)|zod|@google\/genai)$/u,
   'src/platform/': /^(zod)$/u,
   'src/http/': /^(\.\/[\w-]+|\.\.\/(domain|services)\/[\w-]+|zod|hono\/?[\w-]*|node:\w+)$/u,
   'web/': /^(\.\/[\w-]+|\.\.\/src\/domain\/[\w-]+)$/u,

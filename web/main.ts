@@ -1,88 +1,73 @@
 /**
- * Browser entry point: restores a saved plan, wires the form and plan controls, and
- * turns a submitted form into a rendered, saved plan.
+ * Browser entry point: wires the form and plan controls to a one-way store. Handlers
+ * dispatch events, `transition` computes state, and `applyChange` saves and renders.
  */
-import type { Plan } from '../src/services/coach';
-import { requestPlan } from './api';
+import { type Send, requestPlan } from './api';
+import { COPYING, STATUS } from './copy';
 import { byId, find } from './dom';
-import { type FormState, wireAudience, wireLocation, wireTrips } from './form-controller';
+import { type Locator, wireAudience, wireLocation, wireTrips } from './form-controller';
 import { clearErrors, showErrors } from './form-errors';
 import { readForm } from './form-read';
 import { renderPlan } from './render-plan';
-import { type Saved, forget, loadSaved, save } from './storage';
+import { type PageState, initialState } from './state';
+import { type PlanStorage, forget, loadSaved, save } from './storage';
+import { type Store, createStore } from './store';
 
-/** Browser services, injectable for tests. */
+/** Browser services, narrowed to what the page uses so tests can supply small fakes. */
 export interface PageEnv {
-  readonly fetch: typeof fetch;
-  readonly storage: Storage;
-  readonly geolocation: Geolocation | undefined;
-  readonly clipboard: Clipboard | undefined;
+  readonly fetch: Send;
+  readonly storage: PlanStorage;
+  readonly geolocation: Locator | undefined;
+  readonly clipboard: Pick<Clipboard, 'writeText'> | undefined;
   readonly print: () => void;
-}
-
-/** Mutable page state. */
-interface PageState extends FormState {
-  saved: Saved | null;
 }
 
 function status(message: string): void {
   byId('form-status', HTMLElement).textContent = message;
 }
 
-function show(state: PageState, env: PageEnv, plan: Plan): void {
-  state.saved = { plan, done: [] };
-  save(env.storage, state.saved);
-  renderPlan(plan, new Set());
+/** Applies the side effects of a state change: the busy button, storage and rendering. */
+function applyChange(env: PageEnv, next: PageState, previous: PageState): void {
+  byId('submit', HTMLButtonElement).disabled = next.busy;
+  if (next.saved === previous.saved) return;
+  if (next.saved === null) {
+    forget(env.storage);
+    byId('plan', HTMLElement).hidden = true;
+    return;
+  }
+  save(env.storage, next.saved);
+  if (next.saved.plan !== previous.saved?.plan)
+    renderPlan(next.saved.plan, new Set(next.saved.done));
 }
 
-async function submit(state: PageState, env: PageEnv): Promise<void> {
-  const button = byId('submit', HTMLButtonElement);
+async function submit(store: Store, env: PageEnv): Promise<void> {
   clearErrors();
-  button.disabled = true;
-  status(
-    'Fetching the live air forecast and writing your plan. This can take up to half a minute.',
-  );
-  const result = await requestPlan(
-    readForm(byId('planner', HTMLFormElement), state.coords),
-    env.fetch,
-  );
-  button.disabled = false;
+  store.dispatch({ type: 'submitted' });
+  status(STATUS.working);
+  const draft = readForm(byId('planner', HTMLFormElement), store.current().coords);
+  const result = await requestPlan(draft, env.fetch);
   if (!result.ok) {
+    store.dispatch({ type: 'failed' });
     status('');
     showErrors(result.title, result.fields);
     return;
   }
-  show(state, env, result.plan);
-  status('Your plan is ready below.');
+  store.dispatch({ type: 'planned', plan: result.plan });
+  status(STATUS.ready);
   byId('plan', HTMLElement).focus();
-}
-
-function onPlanClick(state: PageState, env: PageEnv, target: Element): void {
-  if (target.closest('#print-plan') !== null) env.print();
-  if (target.closest('#clear-plan') !== null) {
-    forget(env.storage);
-    state.saved = null;
-    byId('plan', HTMLElement).hidden = true;
-    status('Saved plan cleared.');
-    byId('f-location-name', HTMLInputElement).focus();
-  }
-  const copy = target.closest<HTMLElement>('[data-copy]');
-  if (copy !== null) void copyNotice(env, copy);
 }
 
 /** Copies text and says how it went, in words for the status line. */
 async function copyText(
-  clipboard: Clipboard | undefined,
+  clipboard: PageEnv['clipboard'],
   text: string | undefined,
 ): Promise<string> {
-  if (clipboard === undefined || text === undefined) {
-    return 'Copying is not available here. Select the notice text and copy it instead.';
-  }
+  if (clipboard === undefined || text === undefined) return COPYING.unavailable;
   try {
     await clipboard.writeText(text);
-    return 'Notice copied. Paste it into your group.';
+    return COPYING.done;
   } catch {
-    return 'Copying was blocked. Select the notice text and copy it instead.';
+    return COPYING.blocked;
   }
 }
 
@@ -91,46 +76,59 @@ async function copyNotice(env: PageEnv, button: HTMLElement): Promise<void> {
   find(document, '[data-copy-status]', HTMLElement).textContent = message;
 }
 
-/** A ticked or unticked checklist box. */
-interface Tick {
-  readonly id: string;
-  readonly checked: boolean;
+function onPlanClick(store: Store, env: PageEnv, target: Element): void {
+  if (target.closest('#print-plan') !== null) env.print();
+  if (target.closest('#clear-plan') !== null) {
+    store.dispatch({ type: 'cleared' });
+    status(STATUS.cleared);
+    byId('f-location-name', HTMLInputElement).focus();
+  }
+  const copy = target.closest<HTMLElement>('[data-copy]');
+  if (copy !== null) void copyNotice(env, copy);
 }
 
 /** The tick a change event describes, or null when it came from something else. */
-function tickOf(target: EventTarget | null): Tick | null {
+function tickOf(target: EventTarget | null): { id: string; done: boolean } | null {
   if (!(target instanceof HTMLInputElement)) return null;
   const id = target.dataset['action'];
-  return id === undefined ? null : { id, checked: target.checked };
+  return id === undefined ? null : { id, done: target.checked };
 }
 
-function onTick(state: PageState, env: PageEnv, { id, checked }: Tick): void {
-  if (state.saved === null) return;
-  const done = new Set(state.saved.done);
-  if (checked) done.add(id);
-  else done.delete(id);
-  state.saved = { ...state.saved, done: [...done] };
-  save(env.storage, state.saved);
+function wirePlan(store: Store, env: PageEnv): void {
+  const plan = byId('plan', HTMLElement);
+  plan.addEventListener('click', (event) => {
+    if (event.target instanceof Element) onPlanClick(store, env, event.target);
+  });
+  plan.addEventListener('change', (event) => {
+    const tick = tickOf(event.target);
+    if (tick !== null) store.dispatch({ type: 'ticked', ...tick });
+  });
 }
 
 /** Starts the page. */
 export function start(env: PageEnv): void {
-  const state: PageState = { coords: null, saved: loadSaved(env.storage) };
+  const saved = loadSaved(env.storage);
+  const store = createStore(initialState(saved), (next, previous) => {
+    applyChange(env, next, previous);
+  });
   const form = byId('planner', HTMLFormElement);
-  const plan = byId('plan', HTMLElement);
   wireTrips();
   wireAudience(form);
-  wireLocation(state, env.geolocation);
+  wireLocation(
+    {
+      located: (coords) => {
+        store.dispatch({ type: 'located', coords });
+      },
+      typed: () => {
+        store.dispatch({ type: 'place-typed' });
+      },
+    },
+    env.geolocation,
+  );
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    void submit(state, env);
+    void submit(store, env);
   });
-  plan.addEventListener('click', (event) => {
-    if (event.target instanceof Element) onPlanClick(state, env, event.target);
-  });
-  plan.addEventListener('change', (event) => {
-    const tick = tickOf(event.target);
-    if (tick !== null) onTick(state, env, tick);
-  });
-  if (state.saved !== null) renderPlan(state.saved.plan, new Set(state.saved.done));
+  wirePlan(store, env);
+  if (saved !== null) renderPlan(saved.plan, new Set(saved.done));
 }

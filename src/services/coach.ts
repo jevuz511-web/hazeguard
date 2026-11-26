@@ -83,6 +83,13 @@ function parseJson(text: string): unknown {
   }
 }
 
+/** Error name and HTTP status (when the SDK reports one) for logs; never the message, which may echo input. */
+export function describeFailure(error: unknown): { reason: string; status?: number } {
+  if (!(error instanceof Error)) return { reason: 'unknown' };
+  const status: unknown = Reflect.get(error, 'status');
+  return typeof status === 'number' ? { reason: error.name, status } : { reason: error.name };
+}
+
 /** One model call, judged against the schema and the assessment. */
 async function attempt(
   writer: Writer,
@@ -106,10 +113,7 @@ async function attempt(
     const problems = reviewTailoring(parsed.data, input.assessment, input.audience);
     return problems.length === 0 ? { writing: parsed.data } : { problems };
   } catch (error) {
-    writer.logger.warn('model.failed', {
-      model: call.model,
-      reason: error instanceof Error ? error.name : 'unknown',
-    });
+    writer.logger.warn('model.failed', { model: call.model, ...describeFailure(error) });
     return { problems: [] };
   }
 }
@@ -121,8 +125,10 @@ async function writeWithModels(writer: Writer, input: BriefInput): Promise<Writt
   for (const model of writer.models) {
     const result = await attempt(writer, input, { model, prompt });
     if ('writing' in result) return { writing: result.writing, model };
-    writer.logger.warn('model.rejected', { model, problems: result.problems.length });
-    if (result.problems.length > 0) prompt = withRepairNotes(base, result.problems);
+    if (result.problems.length > 0) {
+      writer.logger.warn('model.rejected', { model, problems: result.problems.length });
+      prompt = withRepairNotes(base, result.problems);
+    }
   }
   return null;
 }

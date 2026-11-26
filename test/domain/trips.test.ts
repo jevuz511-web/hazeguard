@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Hours } from '../../src/domain/forecast';
-import { MODE_PROFILES, MODES, planTrip, priceLeg, reachableModes } from '../../src/domain/trips';
-import { COMMUTE, dayOfHours } from '../fixtures';
+import { MODE_PROFILES, MODES } from '../../src/domain/modes';
+import { planTrip, priceLeg, reachableModes } from '../../src/domain/trips';
+import { airHour as hour, dayOfHours, trip } from '../fixtures';
+import { kilometres } from '../../src/domain/units';
 
 const noTransit = { bus: false, metro: false };
-const hour = (time: string, pm2_5: number) => ({ time, pm2_5, pm10: pm2_5 });
 
 describe('MODE_PROFILES', () => {
   it('has sourced factors for every mode, with carpool a third of a car', () => {
@@ -16,7 +17,7 @@ describe('MODE_PROFILES', () => {
 
 describe('priceLeg', () => {
   it('prices CO2, time and inhaled dose for a car trip', () => {
-    const leg = priceLeg({ mode: 'car', km: 11 }, hour('2026-12-01T09:00', 200));
+    const leg = priceLeg({ mode: 'car', km: kilometres(11) }, hour('2026-12-01T09:00', 200));
     expect(leg).toEqual({
       mode: 'car',
       time: '2026-12-01T09:00',
@@ -29,27 +30,28 @@ describe('priceLeg', () => {
 
   it('charges active travel more dose for the same air', () => {
     const at = hour('2026-12-01T09:00', 100);
-    expect(priceLeg({ mode: 'cycle', km: 6 }, at).doseUg).toBeGreaterThan(
-      priceLeg({ mode: 'metro', km: 6 }, at).doseUg,
+    expect(priceLeg({ mode: 'cycle', km: kilometres(6) }, at).doseUg).toBeGreaterThan(
+      priceLeg({ mode: 'metro', km: kilometres(6) }, at).doseUg,
     );
   });
 });
 
 describe('reachableModes', () => {
   it('offers walking and cycling only for short trips', () => {
-    expect(reachableModes({ ...COMMUTE, km: 1.5 }, noTransit)).toEqual([
+    expect(reachableModes(trip({ km: 1.5 }), noTransit)).toEqual([
       'car',
       'walk',
       'cycle',
       'carpool',
     ]);
-    expect(reachableModes({ ...COMMUTE, km: 20 }, noTransit)).toEqual(['car', 'carpool']);
+    expect(reachableModes(trip({ km: 20 }), noTransit)).toEqual(['car', 'carpool']);
   });
 
   it('offers transit that is nearby and never repeats the usual mode', () => {
-    expect(reachableModes({ ...COMMUTE, km: 20, mode: 'bus' }, { bus: true, metro: true })).toEqual(
-      ['bus', 'metro'],
-    );
+    expect(reachableModes(trip({ km: 20, mode: 'bus' }), { bus: true, metro: true })).toEqual([
+      'bus',
+      'metro',
+    ]);
   });
 });
 
@@ -57,8 +59,7 @@ describe('planTrip', () => {
   const hours = dayOfHours();
 
   it('moves a car commute to the metro at a cleaner hour', () => {
-    const trip = { ...COMMUTE, km: 12 };
-    const plan = planTrip(trip, hours, {
+    const plan = planTrip(trip({ km: 12 }), hours, {
       transit: { bus: true, metro: true },
       flexHours: 2,
       sensitive: false,
@@ -72,7 +73,7 @@ describe('planTrip', () => {
   });
 
   it('suggests cycling to people who are not sensitive, even though they breathe more', () => {
-    const plan = planTrip({ ...COMMUTE, km: 4 }, hours, {
+    const plan = planTrip(trip({ km: 4 }), hours, {
       transit: noTransit,
       flexHours: 0,
       sensitive: false,
@@ -82,7 +83,7 @@ describe('planTrip', () => {
   });
 
   it('keeps sensitive people off bikes when the air is Poor, and says so', () => {
-    const plan = planTrip({ ...COMMUTE, km: 4 }, hours, {
+    const plan = planTrip(trip({ km: 4 }), hours, {
       transit: noTransit,
       flexHours: 0,
       sensitive: true,
@@ -93,7 +94,7 @@ describe('planTrip', () => {
 
   it('lets sensitive people cycle when the air is clean', () => {
     const clean: Hours = [hour('2026-12-01T09:00', 20)];
-    const plan = planTrip({ ...COMMUTE, km: 4 }, clean, {
+    const plan = planTrip(trip({ km: 4 }), clean, {
       transit: noTransit,
       flexHours: 0,
       sensitive: true,
@@ -102,7 +103,7 @@ describe('planTrip', () => {
   });
 
   it('keeps a trip that is already the cleanest choice', () => {
-    const plan = planTrip({ ...COMMUTE, mode: 'metro', km: 20 }, hours, {
+    const plan = planTrip(trip({ mode: 'metro', km: kilometres(20) }), hours, {
       transit: noTransit,
       flexHours: 0,
       sensitive: false,
@@ -112,7 +113,7 @@ describe('planTrip', () => {
   });
 
   it('breaks CO2 ties by the smaller dose (a short ride beats a longer walk)', () => {
-    const plan = planTrip({ ...COMMUTE, mode: 'walk', km: 1 }, hours, {
+    const plan = planTrip(trip({ mode: 'walk', km: kilometres(1) }), hours, {
       transit: noTransit,
       flexHours: 0,
       sensitive: false,

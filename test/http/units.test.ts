@@ -36,7 +36,7 @@ describe('PlanBodySchema', () => {
   });
 
   it('reports one message per field path', () => {
-    const result = PlanBodySchema.safeParse(planBody({ flexHours: null as unknown as number }));
+    const result = PlanBodySchema.safeParse({ ...planBody(), flexHours: null });
     expect(result.success).toBe(false);
     if (!result.success)
       expect(fieldErrors(result.error)).toEqual({ flexHours: 'Enter a number.' });

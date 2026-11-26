@@ -5,78 +5,23 @@
 import { bandRank } from './aqi';
 import { type AirHour, type Hours, cleanestNear, nextOccurrence, rate } from './forecast';
 import type { Transit } from './household';
-
-/** Ways of making a trip. `carpool` is a car shared by three people. */
-export const MODES = ['walk', 'cycle', 'bus', 'metro', 'motorbike', 'car', 'carpool'] as const;
-
-/** One way of making a trip. */
-export type Mode = (typeof MODES)[number];
-
-/** The numbers behind a mode; see PROBLEM_ALIGNMENT.md for every source. */
-export interface ModeProfile {
-  readonly label: string;
-  /** kg CO2e per passenger-km (DESNZ/DEFRA 2025 conversion factors). */
-  readonly co2PerKm: number;
-  /** Typical door-to-door city speed (assumption). */
-  readonly kmPerHour: number;
-  /** Air breathed in m³/h at this activity level (US EPA Exposure Factors Handbook). */
-  readonly breathing: number;
-  /** PM2.5 inside the mode relative to the street (assumption from commuter studies). */
-  readonly exposure: number;
-  /** Whether the traveller is breathing hard outdoors. */
-  readonly active: boolean;
-}
-
-/** Per-mode factors used for every trip calculation. */
-export const MODE_PROFILES: Readonly<Record<Mode, ModeProfile>> = {
-  walk: { label: 'Walk', co2PerKm: 0, kmPerHour: 4.5, breathing: 0.72, exposure: 1, active: true },
-  cycle: { label: 'Cycle', co2PerKm: 0, kmPerHour: 12, breathing: 1.56, exposure: 1, active: true },
-  bus: {
-    label: 'Bus',
-    co2PerKm: 0.1085,
-    kmPerHour: 15,
-    breathing: 0.25,
-    exposure: 0.9,
-    active: false,
-  },
-  metro: {
-    label: 'Metro',
-    co2PerKm: 0.0286,
-    kmPerHour: 30,
-    breathing: 0.25,
-    exposure: 0.6,
-    active: false,
-  },
-  motorbike: {
-    label: 'Motorbike or scooter',
-    co2PerKm: 0.1137,
-    kmPerHour: 25,
-    breathing: 0.72,
-    exposure: 1.2,
-    active: false,
-  },
-  car: {
-    label: 'Car (alone)',
-    co2PerKm: 0.1645,
-    kmPerHour: 22,
-    breathing: 0.25,
-    exposure: 0.8,
-    active: false,
-  },
-  carpool: {
-    label: 'Carpool (3 people)',
-    co2PerKm: 0.1645 / 3,
-    kmPerHour: 22,
-    breathing: 0.25,
-    exposure: 0.8,
-    active: false,
-  },
-};
+import { MODE_PROFILES, type Mode } from './modes';
+import { TRAVEL_POLICY } from './policy';
+import {
+  type Concentration,
+  type KilogramsCo2e,
+  type Kilometres,
+  type Micrograms,
+  type Minutes,
+  kilogramsCo2e,
+  micrograms,
+  minutes,
+} from './units';
 
 /** A regular one-way trip the household makes. */
 export interface Trip {
   readonly label: string;
-  readonly km: number;
+  readonly km: Kilometres;
   readonly mode: Mode;
   /** Usual clock hour of departure (0 to 23). */
   readonly departHour: number;
@@ -87,10 +32,10 @@ export interface Trip {
 export interface Leg {
   readonly mode: Mode;
   readonly time: string;
-  readonly pm2_5: number;
-  readonly minutes: number;
-  readonly co2Kg: number;
-  readonly doseUg: number;
+  readonly pm2_5: Concentration;
+  readonly minutes: Minutes;
+  readonly co2Kg: KilogramsCo2e;
+  readonly doseUg: Micrograms;
 }
 
 /** What changed between the usual trip and the suggestion. */
@@ -102,8 +47,9 @@ export interface TripPlan {
   readonly usual: Leg;
   readonly better: Leg;
   readonly changes: readonly Change[];
-  readonly weeklyCo2SavedKg: number;
-  readonly weeklyDoseSavedUg: number;
+  readonly weeklyCo2SavedKg: KilogramsCo2e;
+  /** Negative when the better option means breathing in more (active travel). */
+  readonly weeklyDoseSavedUg: Micrograms;
 }
 
 /** What the household's situation allows when choosing alternatives. */
@@ -113,27 +59,25 @@ export interface TravelContext {
   readonly sensitive: boolean;
 }
 
-const round = (value: number): number => Math.round(value * 100) / 100;
-
 /** Prices one mode for a trip of `km` leaving at `hour`. */
-export function priceLeg(choice: { mode: Mode; km: number }, hour: AirHour): Leg {
+export function priceLeg(choice: { mode: Mode; km: Kilometres }, hour: AirHour): Leg {
   const profile = MODE_PROFILES[choice.mode];
   const hours = choice.km / profile.kmPerHour;
   return {
     mode: choice.mode,
     time: hour.time,
     pm2_5: hour.pm2_5,
-    minutes: Math.round(hours * 60),
-    co2Kg: round(choice.km * profile.co2PerKm),
-    doseUg: round(hour.pm2_5 * profile.exposure * profile.breathing * hours),
+    minutes: minutes(hours * 60),
+    co2Kg: kilogramsCo2e(choice.km * profile.co2PerKm),
+    doseUg: micrograms(hour.pm2_5 * profile.exposure * profile.breathing * hours),
   };
 }
 
 /** Modes that are realistic for this trip's distance and the transit nearby. */
 export function reachableModes(trip: Trip, transit: Transit): Mode[] {
   const options: Mode[] = [trip.mode];
-  if (trip.km <= 2) options.push('walk');
-  if (trip.km <= 8) options.push('cycle');
+  if (trip.km <= TRAVEL_POLICY.walkMaxKm) options.push('walk');
+  if (trip.km <= TRAVEL_POLICY.cycleMaxKm) options.push('cycle');
   if (transit.bus) options.push('bus');
   if (transit.metro) options.push('metro');
   if (trip.mode === 'car') options.push('carpool');
@@ -145,14 +89,15 @@ function cheaperFirst(a: Leg, b: Leg): number {
   return a.co2Kg - b.co2Kg || a.doseUg - b.doseUg;
 }
 
-/** Breathing hard outdoors is ruled out for sensitive people once the air is Poor or worse. */
+/** Breathing hard outdoors is ruled out for sensitive people once the air is bad enough. */
 function shieldedModes(
   trip: Trip,
   hour: AirHour,
   context: TravelContext,
 ): { modes: Mode[]; removed: boolean } {
   const reachable = reachableModes(trip, context.transit);
-  const shield = context.sensitive && bandRank(rate(hour).band.id) >= bandRank('poor');
+  const badAir = bandRank(rate(hour).band.id) >= bandRank(TRAVEL_POLICY.shieldSensitiveFrom);
+  const shield = context.sensitive && badAir;
   const modes = reachable.filter(
     (mode) => mode === trip.mode || !(shield && MODE_PROFILES[mode].active),
   );
@@ -182,7 +127,7 @@ export function planTrip(trip: Trip, hours: Hours, context: TravelContext): Trip
     usual,
     better,
     changes: changesBetween(usual, better, removed),
-    weeklyCo2SavedKg: round((usual.co2Kg - better.co2Kg) * trip.perWeek),
-    weeklyDoseSavedUg: round((usual.doseUg - better.doseUg) * trip.perWeek),
+    weeklyCo2SavedKg: kilogramsCo2e((usual.co2Kg - better.co2Kg) * trip.perWeek),
+    weeklyDoseSavedUg: micrograms((usual.doseUg - better.doseUg) * trip.perWeek),
   };
 }

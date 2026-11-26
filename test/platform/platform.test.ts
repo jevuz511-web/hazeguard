@@ -8,6 +8,7 @@ describe('loadConfig', () => {
       apiKey: null,
       models: ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'],
       modelTimeoutMs: 15_000,
+      airTimeoutMs: 8000,
       port: 8080,
       limits: { perClient: 8, global: 60 },
       trustedProxies: 0,

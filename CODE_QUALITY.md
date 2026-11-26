@@ -36,29 +36,49 @@ These boundaries are **tested**: `test/quality/conventions.test.ts` reads every 
 - **Non-empty types where emptiness is impossible.**
   - Forecast hours are `readonly [AirHour, ...AirHour[]]`, and band tables are tuples.
   - The code needs no unreachable `?? fallback` branches.
+- **Units in the type system** (`src/domain/units.ts`).
+  - Kilometres, kg CO₂e, micrograms, µg/m³ and minutes are branded number types. Adding a dose to an emission is a compile error.
+  - The unit constructors are the only place that may assert a type, and they also fix each quantity's precision. This replaced two copies of a `round` helper.
+- **Judgement calls are named data.**
+  - Walking and cycling distances, the carpool size, the band that shields sensitive people and the airing hours live in `src/domain/policy.ts`.
+  - The sourced mode factors live in `src/domain/modes.ts`, built from named constants (`BREATHING`, `CAR_CO2_PER_KM`).
+  - Model writing limits live in `WRITING_LIMITS`, browser limits in `web/limits.ts`, and timeouts and cache lifetimes in config or named constants.
+- **No type assertions in shipped code.**
+  - ESLint `consistent-type-assertions: never` covers `src/` and `web/`, apart from the unit constructors.
+  - Data from outside is narrowed: server JSON and localStorage go through declarative shape guards (`web/guards.ts`); Node connection info comes from `getConnInfo`; DOM lookups go through checked helpers.
+- **Pure browser state.**
+  - `web/state.ts` is a pure `(state, event) → state` function with exhaustive event types.
+  - `web/store.ts` holds the current state, and a single `applyChange` performs the side effects (saving, rendering, the busy button).
+  - Handlers only dispatch events, so every rule is unit-tested without a DOM.
+- **Interface segregation.** The page asks for exactly what it uses (`Send`, `Locator`, `PlanStorage`, `Pick<Clipboard, 'writeText'>`), so fakes need no casts.
+- **One place for wording.** Every sentence the page writes lives in `web/copy.ts`. Renderers and controllers hold no prose.
+- **Traceable requests.** Each response carries `X-Request-Id`, and `plan.created` and `request.failed` logs include it, along with the author and timing.
+- **Decisions are recorded.** Architecture decision records in [docs/adr](docs/adr/README.md) explain why, and [docs/API.md](docs/API.md) is the HTTP contract.
 
 ## Enforced limits
 
-| Rule                               | Limit                                        | Tool                            |
-| ---------------------------------- | -------------------------------------------- | ------------------------------- |
-| Lines per function                 | 30                                           | ESLint `max-lines-per-function` |
-| Parameters per function            | 3 (an options object beyond that)            | ESLint `max-params`             |
-| Cyclomatic complexity              | 8                                            | ESLint `complexity`             |
-| Nesting depth                      | 3                                            | ESLint `max-depth`              |
-| Lines per module                   | 200 (tests 250)                              | ESLint `max-lines`              |
-| Type safety                        | `strictTypeChecked` + `stylisticTypeChecked` | typescript-eslint               |
-| Maintainability smells             | SonarJS recommended rules                    | `eslint-plugin-sonarjs`         |
-| HTML from strings                  | Banned (`innerHTML`, `outerHTML`)            | ESLint + conventions test       |
-| Formatting                         | Prettier, checked in CI                      | `npm run lint`                  |
-| Every module and export documented | Required                                     | conventions test                |
+| Rule                               | Limit                                        | Tool                                     |
+| ---------------------------------- | -------------------------------------------- | ---------------------------------------- |
+| Lines per function                 | 30                                           | ESLint `max-lines-per-function`          |
+| Parameters per function            | 3 (an options object beyond that)            | ESLint `max-params`                      |
+| Cyclomatic complexity              | 8                                            | ESLint `complexity`                      |
+| Nesting depth                      | 3                                            | ESLint `max-depth`                       |
+| Lines per module                   | 200 (tests 250)                              | ESLint `max-lines`                       |
+| Type safety                        | `strictTypeChecked` + `stylisticTypeChecked` | typescript-eslint                        |
+| Maintainability smells             | SonarJS recommended rules                    | `eslint-plugin-sonarjs`                  |
+| HTML from strings                  | Banned (`innerHTML`, `outerHTML`)            | ESLint + conventions test                |
+| Formatting                         | Prettier, checked in CI                      | `npm run lint`                           |
+| Every module and export documented | Required                                     | `eslint-plugin-jsdoc` + conventions test |
+| Type assertions (`as`)             | Banned outside the unit constructors         | ESLint `consistent-type-assertions`      |
 
 TypeScript runs with `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `verbatimModuleSyntax` and `isolatedModules`.
 
 ## Measured
 
-- **Size:** 45 TypeScript source files, about 4,200 lines including docs and formatting; the largest module is under 200 lines.
-- **Duplication:** 0 exact clones across `src`, `web` and `test` (jscpd, 50-token minimum).
-- **Checks:** ESLint with SonarJS reports 0 issues, and `tsc --noEmit` reports 0 errors.
+- **Size:** 53 TypeScript source files, about 3,800 lines including docs and formatting; the largest module is 168 lines.
+- **Duplication:** 0 exact clones across `src`, `web` and `test` (jscpd, 50-token minimum, 85 files).
+- **Checks:** ESLint with SonarJS reports 0 issues, and `tsc --noEmit` reports 0 errors, tests included.
+- **Assertions:** 0 type assertions in `src/` and `web/` outside the five unit constructors. Tests use them only to read parsed JSON replies and matcher placeholders.
 
 ## Tooling
 

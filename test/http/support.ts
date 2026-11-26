@@ -1,7 +1,7 @@
 /** Builds a test app with fakes and sends requests to it. */
-import type { Hono } from 'hono';
+
 import { toAsset } from '../../src/http/assets';
-import { createApp } from '../../src/http/app';
+import { type App, createApp } from '../../src/http/app';
 import { createCoach } from '../../src/services/coach';
 import type { TextModel } from '../../src/services/ports';
 import { fixedAir, goodReply, memoryLogger, planBody, scriptedModel } from '../fixtures';
@@ -28,7 +28,7 @@ export interface TestAppOptions {
 
 /** A test app plus the logger it writes to. */
 export function testApp(options: TestAppOptions = {}): {
-  app: Hono;
+  app: App;
   logger: ReturnType<typeof memoryLogger>;
 } {
   const logger = memoryLogger();
@@ -49,7 +49,7 @@ export function testApp(options: TestAppOptions = {}): {
 
 /** POSTs JSON to /api/plan the way the page does. */
 export function postPlan(
-  app: Hono,
+  app: App,
   body: unknown = planBody(),
   headers: Record<string, string> = {},
 ): Promise<Response> {

@@ -18,6 +18,19 @@ describe('POST /api/plan', () => {
     expect(response.headers.get('x-frame-options')).toBe('DENY');
   });
 
+  it('tags every response with a request id and logs how each plan was made', async () => {
+    const { app, logger } = testApp();
+    const response = await postPlan(app);
+    const id = response.headers.get('x-request-id');
+    expect(id).toMatch(/^[\da-f-]{36}$/u);
+    expect(logger.entries.at(-1)).toMatchObject({
+      event: 'plan.created',
+      data: { requestId: id, author: 'gemini' },
+    });
+    const echoed = await app.request('/api/health', { headers: { 'X-Request-Id': 'trace-123' } });
+    expect(echoed.headers.get('x-request-id')).toBe('trace-123');
+  });
+
   it('rejects cross-site requests before doing any work', async () => {
     const response = await postPlan(testApp().app, planBody(), { 'Sec-Fetch-Site': 'cross-site' });
     expect(response.status).toBe(403);
@@ -86,7 +99,7 @@ describe('POST /api/plan', () => {
     expect(await response.text()).not.toContain('secret internals');
     expect(logger.entries.at(-1)).toMatchObject({
       event: 'request.failed',
-      data: { status: 500, error: 'RangeError' },
+      data: { requestId: expect.any(String) as string, status: 500, error: 'RangeError' },
     });
   });
 

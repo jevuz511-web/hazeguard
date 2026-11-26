@@ -4,6 +4,7 @@
  */
 import { bandRank } from './aqi';
 import { type Action, CATALOGUE, type Condition } from './catalogue';
+import { AIR_POLICY } from './policy';
 import type { Outlook } from './forecast';
 import {
   type Audience,
@@ -27,7 +28,7 @@ const RULES: Readonly<Record<Condition, (situation: Situation) => boolean>> = {
   'solid-cooking-fuel': ({ household }) => cooksWithSmokyFuel(household.home),
   'fuel-heater': ({ household }) => heatsWithFuel(household.home),
   smoker: ({ household }) => household.home.smoker,
-  'bad-air': ({ outlook }) => bandRank(outlook.worst.band.id) >= bandRank('poor'),
+  'bad-air': ({ outlook }) => bandRank(outlook.worst.band.id) >= bandRank(AIR_POLICY.badAirFrom),
   'outdoor-worker': ({ household }) => household.members.includes('outdoor-worker'),
   community: ({ audience }) => audience.kind === 'community',
   school: ({ audience }) => audience.kind === 'community' && audience.setting === 'school',

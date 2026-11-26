@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { byId, fill, find, h } from '../../web/dom';
-import { wireAudience, wireLocation, wireTrips } from '../../web/form-controller';
+import { type Locator, wireAudience, wireLocation, wireTrips } from '../../web/form-controller';
 import { clearErrors, fieldId, showErrors } from '../../web/form-errors';
 import { readForm } from '../../web/form-read';
-import { MAX_TRIPS, addTrip, removeTrip } from '../../web/trip-rows';
-import { loadPage } from './support';
+import { BROWSER_LIMITS } from '../../web/limits';
+import { addTrip, removeTrip } from '../../web/trip-rows';
+import { loadPage, fixedLocator } from './support';
 
 beforeEach(loadPage);
 
@@ -48,7 +49,7 @@ describe('trip rows', () => {
   });
 
   it('stops at five trips and renumbers after a removal', () => {
-    for (let i = 0; i < MAX_TRIPS; i += 1) addTrip(list(), template());
+    for (let i = 0; i < BROWSER_LIMITS.maxTrips; i += 1) addTrip(list(), template());
     expect(addTrip(list(), template())).toBeNull();
     removeTrip(list(), find(list(), '[data-remove]', HTMLButtonElement));
     expect(list().children).toHaveLength(4);
@@ -98,34 +99,44 @@ describe('form controller', () => {
     expect(byId('community-fields', HTMLElement).hidden).toBe(true);
   });
 
-  it('uses the browser location and switches back when a place is typed', () => {
-    const state = { coords: null as { latitude: number; longitude: number } | null };
-    const geolocation = {
-      getCurrentPosition: (success: PositionCallback) => {
-        success({ coords: { latitude: 26.8, longitude: 80.9 } } as GeolocationPosition);
+  it('reports the browser location and a typed place as events', () => {
+    const events: string[] = [];
+    const locator = fixedLocator(26.8, 80.9);
+    wireLocation(
+      {
+        located: (coords) =>
+          events.push(`located ${String(coords.latitude)},${String(coords.longitude)}`),
+        typed: () => events.push('typed'),
       },
-    } as unknown as Geolocation;
-    wireLocation(state, geolocation);
+      locator,
+    );
     byId('use-location', HTMLButtonElement).click();
-    expect(state.coords).toEqual({ latitude: 26.8, longitude: 80.9 });
     expect(byId('location-status', HTMLElement).textContent).toBe(
       'Location found. The plan will use it.',
     );
+    expect(byId('f-location-name', HTMLInputElement).value).toBe('My current location');
     byId('f-location-name', HTMLInputElement).dispatchEvent(new Event('input'));
-    expect(state.coords).toBeNull();
+    expect(events).toEqual(['located 26.8,80.9', 'typed']);
   });
 
   it('explains when location is refused or unsupported', () => {
-    const denied = {
-      getCurrentPosition: (_: PositionCallback, failure: PositionErrorCallback) => {
-        failure({ code: 1 } as GeolocationPositionError);
+    const ignore = { located: () => undefined, typed: () => undefined };
+    const denied: Locator = {
+      getCurrentPosition: (_success, failure) => {
+        failure?.({
+          code: 1,
+          message: 'denied',
+          PERMISSION_DENIED: 1,
+          POSITION_UNAVAILABLE: 2,
+          TIMEOUT: 3,
+        });
       },
-    } as unknown as Geolocation;
-    wireLocation({ coords: null }, denied);
+    };
+    wireLocation(ignore, denied);
     byId('use-location', HTMLButtonElement).click();
     expect(byId('location-status', HTMLElement).textContent).toMatch(/not shared/u);
     loadPage();
-    wireLocation({ coords: null }, undefined);
+    wireLocation(ignore, undefined);
     byId('use-location', HTMLButtonElement).click();
     expect(byId('location-status', HTMLElement).textContent).toMatch(/cannot share/u);
   });

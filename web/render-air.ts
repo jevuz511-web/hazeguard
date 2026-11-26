@@ -3,12 +3,9 @@
  * 24-hour strip for sighted users and the same data as a table for everyone.
  */
 import type { Outlook, RatedHour } from '../src/domain/forecast';
+import { SECTIONS } from './copy';
 import { h, headRow, scrollRegion } from './dom';
 import { clock, when } from './format';
-
-/** Plain-language meaning of the two abbreviations on the card. */
-const GLOSSARY =
-  'NAQI is India’s National Air Quality Index (0 to 500). PM2.5 is fine dust under 2.5 micrometres, small enough to reach deep into the lungs.';
 
 /** Keeps a bar visible even when PM2.5 is near zero. */
 const MIN_BAR = 4;
@@ -38,7 +35,7 @@ function strip(hours: readonly RatedHour[]): HTMLOListElement {
 }
 
 function table(hours: readonly RatedHour[], today: string): HTMLTableElement {
-  const head = headRow(['Time', 'Band', 'NAQI', 'PM2.5 (µg/m³)']);
+  const head = headRow(SECTIONS.hourColumns);
   const rows = hours.map((hour) =>
     h(
       'tr',
@@ -52,7 +49,7 @@ function table(hours: readonly RatedHour[], today: string): HTMLTableElement {
   return h(
     'table',
     {},
-    h('caption', {}, 'Air for the next 24 hours'),
+    h('caption', {}, SECTIONS.hourCaption),
     h('thead', {}, head),
     h('tbody', {}, ...rows),
   );
@@ -63,13 +60,13 @@ function keyHours(outlook: Outlook): HTMLUListElement {
   return h(
     'ul',
     { class: 'key-hours' },
-    keyHour('Worst hour', outlook.worst, today),
-    keyHour('Cleanest hour', outlook.cleanest, today),
-    keyHour('Best time to air the home', outlook.airing, today),
+    keyHour(SECTIONS.worstHour, outlook.worst, today),
+    keyHour(SECTIONS.cleanestHour, outlook.cleanest, today),
+    keyHour(SECTIONS.airingHour, outlook.airing, today),
     h(
       'li',
       {},
-      h('strong', {}, 'Hours at Poor or worse: '),
+      h('strong', {}, `${SECTIONS.unhealthyHours}: `),
       `${String(outlook.unhealthyHours)} of ${String(outlook.hours.length)}`,
     ),
   );
@@ -82,22 +79,22 @@ export function renderAir(outlook: Outlook, place: string): HTMLElement {
   return h(
     'section',
     { class: 'card air', 'aria-labelledby': 'air-title' },
-    h('h3', { id: 'air-title' }, `Air in ${place}`),
+    h('h3', { id: 'air-title' }, SECTIONS.air(place)),
     h(
       'p',
       { class: `reading band-${now.band.id}` },
       h('span', { class: 'reading-index' }, String(now.index)),
-      h('span', { class: 'reading-band' }, `${now.band.label} now`),
+      h('span', { class: 'reading-band' }, SECTIONS.airNow(now.band.label)),
     ),
     h('p', {}, now.band.health),
-    h('p', { class: 'hint' }, GLOSSARY),
+    h('p', { class: 'hint' }, SECTIONS.glossary),
     keyHours(outlook),
     strip(outlook.hours),
     h(
       'details',
       {},
-      h('summary', {}, 'Hour-by-hour table'),
-      scrollRegion('Hour-by-hour air', table(outlook.hours, today)),
+      h('summary', {}, SECTIONS.hourTable),
+      scrollRegion(SECTIONS.hourRegion, table(outlook.hours, today)),
     ),
   );
 }

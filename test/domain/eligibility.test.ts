@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { CATALOGUE, actionById } from '../../src/domain/catalogue';
 import { type Situation, eligibleActions, fits } from '../../src/domain/eligibility';
 import { outlook } from '../../src/domain/forecast';
-import { dayOfHours, forecast, household } from '../fixtures';
+import { airHour, dayOfHours, forecast, hoursOf, household } from '../fixtures';
 
 const smoggy = outlook(forecast());
-const clean = outlook(forecast([{ time: '2026-12-01T12:00', pm2_5: 10, pm10: 10 }]));
+const clean = outlook(forecast(hoursOf(airHour('2026-12-01T12:00', 10))));
 
 function situation(overrides: Partial<Situation> = {}): Situation {
   return { household: household(), outlook: smoggy, audience: { kind: 'household' }, ...overrides };

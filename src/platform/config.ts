@@ -16,6 +16,7 @@ const EnvSchema = z.object({
     .regex(/^[\w.-]+(,[\w.-]+)*$/u)
     .default(DEFAULT_MODELS),
   GEMINI_TIMEOUT_MS: count(1000, 60_000, 15_000),
+  AIR_TIMEOUT_MS: count(1000, 30_000, 8000),
   PORT: count(1, 65_535, 8080),
   RATE_LIMIT_PER_MINUTE: count(1, 1000, 8),
   GLOBAL_PLANS_PER_MINUTE: count(1, 100_000, 60),
@@ -28,6 +29,8 @@ export interface Config {
   readonly apiKey: string | null;
   readonly models: readonly string[];
   readonly modelTimeoutMs: number;
+  /** How long to wait for Open-Meteo. */
+  readonly airTimeoutMs: number;
   readonly port: number;
   readonly limits: { readonly perClient: number; readonly global: number };
   /** How many reverse proxies in front of the app append to X-Forwarded-For. */
@@ -46,6 +49,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
     apiKey: settings.GEMINI_API_KEY ?? null,
     models: settings.GEMINI_MODELS.split(','),
     modelTimeoutMs: settings.GEMINI_TIMEOUT_MS,
+    airTimeoutMs: settings.AIR_TIMEOUT_MS,
     port: settings.PORT,
     limits: { perClient: settings.RATE_LIMIT_PER_MINUTE, global: settings.GLOBAL_PLANS_PER_MINUTE },
     trustedProxies: settings.TRUSTED_PROXIES,

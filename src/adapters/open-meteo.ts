@@ -4,6 +4,7 @@
  */
 import { z } from 'zod';
 import type { AirHour, Forecast, Hours, Place } from '../domain/forecast';
+import { concentration } from '../domain/units';
 import type { AirSource, LocationQuery } from '../services/ports';
 import { Problem } from '../services/problem';
 import { createTtlCache } from './ttl-cache';
@@ -75,7 +76,7 @@ export function upcomingHours(reply: z.infer<typeof AirReply>): Hours {
   for (let i = start; i < time.length && hours.length < HOURS_AHEAD; i += 1) {
     const [stamp, fine, coarse] = [time[i], pm2_5[i], pm10[i]];
     if (stamp !== undefined && typeof fine === 'number' && typeof coarse === 'number') {
-      hours.push({ time: stamp, pm2_5: fine, pm10: coarse });
+      hours.push({ time: stamp, pm2_5: concentration(fine), pm10: concentration(coarse) });
     }
   }
   const [first, ...rest] = hours;
@@ -114,10 +115,23 @@ async function forecastAt(options: OpenMeteoOptions, spot: Spot): Promise<Foreca
   return { place: { ...spot, timezone: reply.timezone }, hours: upcomingHours(reply) };
 }
 
-/** Creates the Open-Meteo air source with 6-hour place and 20-minute forecast caches. */
+/** How long geocodes and forecasts are reused, and how many of each are kept. */
+export const AIR_CACHE = {
+  placeTtlMs: 6 * 60 * 60 * 1000,
+  forecastTtlMs: 20 * 60 * 1000,
+  maxEntries: 500,
+} as const;
+
+/** Creates the Open-Meteo air source with place and forecast caches (see AIR_CACHE). */
 export function createOpenMeteo(options: OpenMeteoOptions): AirSource {
-  const places = createTtlCache<Spot>({ ttlMs: 6 * 3_600_000, maxEntries: 500 });
-  const forecasts = createTtlCache<Forecast>({ ttlMs: 20 * 60_000, maxEntries: 500 });
+  const places = createTtlCache<Spot>({
+    ttlMs: AIR_CACHE.placeTtlMs,
+    maxEntries: AIR_CACHE.maxEntries,
+  });
+  const forecasts = createTtlCache<Forecast>({
+    ttlMs: AIR_CACHE.forecastTtlMs,
+    maxEntries: AIR_CACHE.maxEntries,
+  });
   return {
     async forecastFor(location: LocationQuery) {
       const spot =

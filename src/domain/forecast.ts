@@ -3,6 +3,7 @@
  * cleanest hours ahead, and the best daytime hour to air the home.
  */
 import { type Band, type Particulates, bandFor, bandRank, naqi } from './aqi';
+import { AIR_POLICY } from './policy';
 
 /** One forecast hour; `time` is local wall-clock time as `YYYY-MM-DDTHH:mm`. */
 export interface AirHour extends Particulates {
@@ -41,9 +42,6 @@ export interface Outlook {
   readonly unhealthyHours: number;
   readonly hours: readonly RatedHour[];
 }
-
-/** First hour of the day considered daytime for airing the home, and the first after it. */
-const DAYTIME = { from: 7, until: 21 } as const;
 
 /** Clock hour (0 to 23) of a local timestamp. */
 export function hourOf(time: string): number {
@@ -85,7 +83,7 @@ export function outlook(forecast: Forecast): Outlook {
   const hours = [now, ...forecast.hours.slice(1).map(rate)];
   const daytime = hours.filter((hour) => {
     const clock = hourOf(hour.time);
-    return clock >= DAYTIME.from && clock < DAYTIME.until;
+    return clock >= AIR_POLICY.airingHours.from && clock < AIR_POLICY.airingHours.until;
   });
   return {
     now,
@@ -93,6 +91,8 @@ export function outlook(forecast: Forecast): Outlook {
     worst: hours.reduce((worst, hour) => (hour.index > worst.index ? hour : worst), now),
     cleanest: lowest(hours, now),
     airing: lowest(daytime, daytime[0] ?? now),
-    unhealthyHours: hours.filter((hour) => bandRank(hour.band.id) >= bandRank('poor')).length,
+    unhealthyHours: hours.filter(
+      (hour) => bandRank(hour.band.id) >= bandRank(AIR_POLICY.unhealthyFrom),
+    ).length,
   };
 }

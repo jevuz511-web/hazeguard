@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createCoach } from '../../src/services/coach';
+import { ApiError } from '@google/genai';
+import { createCoach, describeFailure } from '../../src/services/coach';
 import { Problem } from '../../src/services/problem';
 import { fixedAir, goodReply, memoryLogger, planRequest, scriptedModel } from '../fixtures';
 
@@ -73,8 +74,16 @@ describe('createCoach', () => {
       logger.entries.filter((entry) => entry.event === 'model.failed').map((entry) => entry.data),
     ).toEqual([
       { model: 'm', reason: 'unknown' },
-      { model: 'm', reason: 'Problem' },
+      { model: 'm', reason: 'Problem', status: 500 },
     ]);
+  });
+
+  it('logs the HTTP status of SDK errors so quota and overload can be told apart', () => {
+    expect(describeFailure(new ApiError({ message: 'quota for AQ.secret', status: 429 }))).toEqual({
+      reason: 'ApiError',
+      status: 429,
+    });
+    expect(describeFailure(new TypeError('fetch failed'))).toEqual({ reason: 'TypeError' });
   });
 
   it('writes by rules straight away when no API key is configured', async () => {

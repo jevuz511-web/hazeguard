@@ -8,6 +8,7 @@ import { noticeFacts, renderNotice } from '../../web/render-notice';
 import { renderPlan, textLanguage } from '../../web/render-plan';
 import { doseChange, explainTrip, renderTrips } from '../../web/render-trips';
 import { goodReply, household } from '../fixtures';
+import { kilogramsCo2e, micrograms as dose } from '../../src/domain/units';
 import { loadPage, makePlan } from './support';
 
 beforeEach(loadPage);
@@ -67,7 +68,12 @@ describe('trip explanations', () => {
     expect(renderTrips([], '')).toBeNull();
     expect(
       renderImpact(
-        { co2SavedKg: 0, doseSavedUg: 0, dosePercent: 0, communityCo2SavedKg: null },
+        {
+          co2SavedKg: kilogramsCo2e(0),
+          doseSavedUg: dose(0),
+          dosePercent: 0,
+          communityCo2SavedKg: null,
+        },
         0,
         null,
       ),

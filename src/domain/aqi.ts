@@ -4,6 +4,8 @@
  * reported index is the worst sub-index, capped at 500.
  */
 
+import type { Concentration } from './units';
+
 /** The six NAQI categories, mildest first. */
 export const BAND_IDS = [
   'good',
@@ -27,8 +29,8 @@ export interface Band {
 
 /** Particulate concentrations in micrograms per cubic metre. */
 export interface Particulates {
-  readonly pm2_5: number;
-  readonly pm10: number;
+  readonly pm2_5: Concentration;
+  readonly pm10: Concentration;
 }
 
 type Breakpoint = readonly [concentration: number, index: number];

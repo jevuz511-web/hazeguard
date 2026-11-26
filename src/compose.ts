@@ -2,11 +2,11 @@
  * Composition root: the only place that knows every concrete adapter. It reads the config,
  * builds the logger, Open-Meteo source, Gemini model and coach, and returns the app.
  */
-import type { Context, Hono } from 'hono';
+import type { Context } from 'hono';
 import { type GenerateClient, createGeminiModel, geminiClient } from './adapters/gemini';
 import { createOpenMeteo } from './adapters/open-meteo';
 import type { AssetStore } from './http/assets';
-import { createApp } from './http/app';
+import { type App, createApp } from './http/app';
 import { type Config, loadConfig } from './platform/config';
 import { createLogger } from './platform/logger';
 import { createCoach } from './services/coach';
@@ -23,7 +23,7 @@ export interface Wiring {
 
 /** A ready-to-serve application and what it was built from. */
 export interface Runtime {
-  readonly app: Hono;
+  readonly app: App;
   readonly config: Config;
   readonly logger: Logger;
 }
@@ -38,7 +38,7 @@ export function compose(
   const logger = createLogger(write, config.apiKey === null ? [] : [config.apiKey]);
   const client = wiring.client ?? geminiClient;
   const coach = createCoach({
-    air: createOpenMeteo({ fetch: wiring.fetch ?? fetch, timeoutMs: 8000 }),
+    air: createOpenMeteo({ fetch: wiring.fetch ?? fetch, timeoutMs: config.airTimeoutMs }),
     model:
       config.apiKey === null
         ? null

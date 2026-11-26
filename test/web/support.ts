@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import axe from 'axe-core';
+import type { Locator } from '../../web/form-controller';
 import { createCoach, type Plan, type PlanRequest } from '../../src/services/coach';
 import { fixedAir, goodReply, memoryLogger, planRequest, scriptedModel } from '../fixtures';
 
@@ -79,4 +80,23 @@ export async function axeViolations(): Promise<string[]> {
 /** Lets pending promise callbacks run. */
 export async function settle(): Promise<void> {
   for (let i = 0; i < 5; i += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** A Locator that always reports the given coordinates. */
+export function fixedLocator(latitude: number, longitude: number): Locator {
+  return {
+    getCurrentPosition: (success) => {
+      const coords = {
+        latitude,
+        longitude,
+        accuracy: 10,
+        altitude: null,
+        altitudeAccuracy: null,
+        heading: null,
+        speed: null,
+        toJSON: () => ({}),
+      };
+      success({ coords, timestamp: 0, toJSON: () => ({}) });
+    },
+  };
 }

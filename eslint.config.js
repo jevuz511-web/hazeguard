@@ -1,5 +1,7 @@
-// Lint rules: type-aware TypeScript checks, SonarJS maintainability rules and hard size limits.
+// Lint rules: type-aware TypeScript checks, SonarJS maintainability rules, documented
+// public APIs and hard size limits.
 import js from '@eslint/js';
+import jsdoc from 'eslint-plugin-jsdoc';
 import sonarjs from 'eslint-plugin-sonarjs';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -38,6 +40,40 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/explicit-module-boundary-types': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
+    },
+  },
+  {
+    // Every exported function, class, interface, type and constant carries a doc comment.
+    files: ['src/**/*.ts', 'web/**/*.ts'],
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          publicOnly: true,
+          require: { FunctionDeclaration: true, ClassDeclaration: true },
+          contexts: [
+            'TSInterfaceDeclaration',
+            'TSTypeAliasDeclaration',
+            'ExportNamedDeclaration > VariableDeclaration',
+          ],
+        },
+      ],
+      'jsdoc/check-alignment': 'error',
+      'jsdoc/check-tag-names': 'error',
+      'jsdoc/empty-tags': 'error',
+      'jsdoc/no-blank-blocks': 'error',
+      'jsdoc/no-multi-asterisks': 'error',
+      'jsdoc/no-types': 'error',
+    },
+  },
+  {
+    // Type assertions are banned in shipped code: values are narrowed or validated instead.
+    // The unit constructors are the single, documented place that brands plain numbers.
+    files: ['src/**/*.ts', 'web/**/*.ts'],
+    ignores: ['src/domain/units.ts'],
+    rules: {
+      '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
     },
   },
   {

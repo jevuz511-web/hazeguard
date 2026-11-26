@@ -6,6 +6,18 @@ import { z } from 'zod';
 import type { Assessment } from '../domain/assessment';
 import type { Audience } from '../domain/household';
 
+/** Limits on what a model may write; long enough to be useful, short enough to read. */
+export const WRITING_LIMITS = {
+  /** Fewest and most actions a model may pick. */
+  picks: { min: 3, max: 8 },
+  /** Actions shown when the rules write the plan. */
+  rulePicks: 7,
+  /** Longest text, in characters, for each written field. */
+  chars: { summary: 420, why: 220, headline: 90, noticeBody: 600, actionId: 40 },
+} as const;
+
+const { chars, picks } = WRITING_LIMITS;
+
 /** Words a model may write; digits are banned so every number comes from the code. */
 const prose = (max: number) =>
   z
@@ -17,12 +29,12 @@ const prose = (max: number) =>
 
 /** Shape of a model reply. */
 export const TailoringSchema = z.object({
-  summary: prose(420),
+  summary: prose(chars.summary),
   picks: z
-    .array(z.object({ id: z.string().max(40), why: prose(220) }))
-    .min(3)
-    .max(8),
-  notice: z.object({ headline: prose(90), body: prose(600) }).nullable(),
+    .array(z.object({ id: z.string().max(chars.actionId), why: prose(chars.why) }))
+    .min(picks.min)
+    .max(picks.max),
+  notice: z.object({ headline: prose(chars.headline), body: prose(chars.noticeBody) }).nullable(),
 });
 
 /** A validated model reply. */
@@ -65,9 +77,6 @@ export function reviewTailoring(
   return problems;
 }
 
-/** How many actions a rules-only plan shows. */
-const RULES_PICKS = 7;
-
 /** A complete plan text written from the assessment alone, used when no model can help. */
 export function writeByRules(assessment: Assessment, audience: Audience): Writing {
   const { now, cleanest, airing } = assessment.outlook;
@@ -76,7 +85,7 @@ export function writeByRules(assessment: Assessment, audience: Audience): Writin
     `The cleanest hour ahead is ${cleanest.time.slice(11)}, and the best time to air the home ` +
     `is ${airing.time.slice(11)}. Start with the actions at the top of the list.`;
   const picks = assessment.actions
-    .slice(0, RULES_PICKS)
+    .slice(0, WRITING_LIMITS.rulePicks)
     .map((action) => ({ id: action.id, why: null }));
   return { summary, picks, notice: audience.kind === 'community' ? ruleNotice(assessment) : null };
 }

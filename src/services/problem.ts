@@ -20,6 +20,9 @@ export const PROBLEMS = {
 /** One kind of problem. */
 export type ProblemType = keyof typeof PROBLEMS;
 
+/** The HTTP statuses problems can have. */
+export type ProblemStatus = (typeof PROBLEMS)[ProblemType];
+
 /** What a problem carries besides its type and title. */
 export interface ProblemExtras {
   readonly detail?: string;
@@ -32,7 +35,7 @@ export interface ProblemExtras {
 /** An error with a user-safe title, an HTTP status and optional field messages. */
 export class Problem extends Error {
   readonly type: ProblemType;
-  readonly status: number;
+  readonly status: ProblemStatus;
   readonly extras: ProblemExtras;
 
   constructor(type: ProblemType, title: string, extras: ProblemExtras = {}) {

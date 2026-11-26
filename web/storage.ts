@@ -2,29 +2,20 @@
  * Keeps the last plan and the ticked actions in localStorage so a family can come back
  * to its checklist. Storage that is full, blocked or corrupted is treated as empty.
  */
-import type { Plan } from '../src/services/coach';
+import { hasShape, isPlan, isTextList } from './guards';
+import type { Saved } from './state';
 
 const ITEM = 'hazeguard.saved.v1';
 
-/** A plan and the ids of the actions already done. */
-export interface Saved {
-  readonly plan: Plan;
-  readonly done: readonly string[];
-}
+/** The part of the Storage API this module uses. */
+export type PlanStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 function looksSaved(value: unknown): value is Saved {
-  if (typeof value !== 'object' || value === null) return false;
-  const { plan, done } = value as Record<string, unknown>;
-  return (
-    typeof plan === 'object' &&
-    plan !== null &&
-    Array.isArray(done) &&
-    done.every((id) => typeof id === 'string')
-  );
+  return hasShape(value, { plan: isPlan, done: isTextList });
 }
 
 /** The saved plan, or null when there is none or it cannot be read. */
-export function loadSaved(storage: Storage): Saved | null {
+export function loadSaved(storage: PlanStorage): Saved | null {
   try {
     const value: unknown = JSON.parse(storage.getItem(ITEM) ?? 'null');
     return looksSaved(value) ? value : null;
@@ -34,7 +25,7 @@ export function loadSaved(storage: Storage): Saved | null {
 }
 
 /** Saves the plan; returns false when the browser refuses. */
-export function save(storage: Storage, saved: Saved): boolean {
+export function save(storage: PlanStorage, saved: Saved): boolean {
   try {
     storage.setItem(ITEM, JSON.stringify(saved));
     return true;
@@ -44,7 +35,7 @@ export function save(storage: Storage, saved: Saved): boolean {
 }
 
 /** Forgets the saved plan. */
-export function forget(storage: Storage): void {
+export function forget(storage: PlanStorage): void {
   try {
     storage.removeItem(ITEM);
   } catch {

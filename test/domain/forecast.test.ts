@@ -7,9 +7,7 @@ import {
   outlook,
   rate,
 } from '../../src/domain/forecast';
-import { dayOfHours, forecast } from '../fixtures';
-
-const hour = (time: string, pm2_5: number) => ({ time, pm2_5, pm10: pm2_5 });
+import { airHour as hour, dayOfHours, forecast } from '../fixtures';
 
 describe('hourOf and rate', () => {
   it('reads the clock hour from a local timestamp', () => {

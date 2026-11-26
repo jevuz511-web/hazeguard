@@ -4,7 +4,8 @@
  */
 import { z } from 'zod';
 import { COOKING_FUELS, HEATING, LANGUAGES, MEMBERS, SETTINGS } from '../domain/household';
-import { MODES } from '../domain/trips';
+import { MODES } from '../domain/modes';
+import { kilometres } from '../domain/units';
 import type { PlanRequest } from '../services/coach';
 
 /** Control characters and invisible direction overrides (Trojan Source); ZWJ/ZWNJ stay allowed for Indic scripts. */
@@ -94,6 +95,10 @@ export function toPlanRequest(body: PlanBody): PlanRequest {
     audience,
     language,
     note,
-    household: { ...household, members: [...new Set(household.members)] },
+    household: {
+      ...household,
+      members: [...new Set(household.members)],
+      trips: household.trips.map((trip) => ({ ...trip, km: kilometres(trip.km) })),
+    },
   };
 }

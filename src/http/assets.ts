@@ -8,14 +8,17 @@ import { extname, join, relative, sep } from 'node:path';
 import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
 import type { MiddlewareHandler } from 'hono';
 
+/** Bytes backed by a plain ArrayBuffer, which is what a Response body accepts. */
+type Bytes = Uint8Array<ArrayBuffer>;
+
 /** One file ready to send. */
 export interface Asset {
   readonly type: string;
   readonly etag: string;
   readonly cacheControl: string;
-  readonly identity: Uint8Array;
-  readonly br: Uint8Array | null;
-  readonly gzip: Uint8Array | null;
+  readonly identity: Bytes;
+  readonly br: Bytes | null;
+  readonly gzip: Bytes | null;
 }
 
 /** URL path → asset. */
@@ -36,8 +39,9 @@ const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json', '.webmani
 const HASHED = /-[A-Z0-9]{8}\.(?:js|css)$/u;
 
 /** Builds the in-memory asset for one file. */
-export function toAsset(path: string, identity: Uint8Array): Asset {
+export function toAsset(path: string, content: Uint8Array): Asset {
   const extension = extname(path);
+  const identity: Bytes = new Uint8Array(content);
   const compress = COMPRESSIBLE.has(extension);
   return {
     type: TYPES[extension] ?? 'application/octet-stream',
@@ -66,7 +70,7 @@ export function loadAssets(root: string): AssetStore {
 /** The encoded body to send. */
 export interface Encoded {
   readonly encoding: 'br' | 'gzip' | null;
-  readonly body: Uint8Array;
+  readonly body: Bytes;
 }
 
 /** The best encoding the client accepts: Brotli, then gzip, then none. */
@@ -95,12 +99,9 @@ export function assetResponse(asset: Asset, request: Request): Response {
   const { encoding, body } = encode(asset, request.headers.get('accept-encoding') ?? '');
   headers.set('Content-Type', asset.type);
   if (encoding !== null) headers.set('Content-Encoding', encoding);
-  return new Response(
-    request.method === 'HEAD' ? null : new Blob([body as Uint8Array<ArrayBuffer>]),
-    {
-      headers,
-    },
-  );
+  return new Response(request.method === 'HEAD' ? null : body, {
+    headers,
+  });
 }
 
 /** Serves GET and HEAD requests for known assets; everything else falls through. */

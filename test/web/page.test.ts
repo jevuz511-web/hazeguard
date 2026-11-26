@@ -1,18 +1,20 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { requestPlan, toFailure } from '../../web/api';
+import { type Send, requestPlan, toFailure } from '../../web/api';
 import { byId, find } from '../../web/dom';
 import { type PageEnv, start } from '../../web/main';
 import { forget, loadSaved, save } from '../../web/storage';
 import { goodReply } from '../fixtures';
-import { axeViolations, loadPage, makePlan, memoryStorage, settle } from './support';
+import { axeViolations, loadPage, makePlan, memoryStorage, settle, fixedLocator } from './support';
 
 beforeEach(loadPage);
+
+const offline: Send = () => Promise.reject(new TypeError('offline'));
 
 function env(overrides: Partial<PageEnv> = {}): PageEnv & { printed: number } {
   const page = {
     printed: 0,
-    fetch: (() => Promise.reject(new TypeError('offline'))) as typeof fetch,
+    fetch: offline,
     storage: memoryStorage(),
     geolocation: undefined,
     clipboard: undefined,
@@ -24,8 +26,10 @@ function env(overrides: Partial<PageEnv> = {}): PageEnv & { printed: number } {
   return page;
 }
 
-const replyWith = (status: number, body: unknown) =>
-  (() => Promise.resolve(Response.json(body, { status }))) as typeof fetch;
+const replyWith =
+  (status: number, body: unknown): Send =>
+  () =>
+    Promise.resolve(Response.json(body, { status }));
 
 describe('api', () => {
   it('turns problems, garbage and network errors into failures', async () => {
@@ -44,6 +48,15 @@ describe('api', () => {
       title: 'Slow down',
     });
     expect(await requestPlan({}, env().fetch)).toMatchObject({ ok: false });
+  });
+});
+
+describe('unexpected replies', () => {
+  it('rejects a 200 reply that is not a plan', async () => {
+    expect(await requestPlan({}, replyWith(200, { hello: 'world' }))).toMatchObject({
+      ok: false,
+      title: expect.stringMatching(/unexpected reply/u) as string,
+    });
   });
 });
 
@@ -87,6 +100,27 @@ describe('the page', () => {
     expect(byId('form-status', HTMLElement).textContent).toBe('Your plan is ready below.');
     expect(document.activeElement).toBe(byId('plan', HTMLElement));
     expect(await axeViolations()).toEqual([]);
+  });
+
+  it('sends the browser location until a place is typed', async () => {
+    const bodies: string[] = [];
+    const capture: Send = (_url, init) => {
+      bodies.push(typeof init.body === 'string' ? init.body : '');
+      return Promise.reject(new TypeError('offline'));
+    };
+    const geolocation = fixedLocator(26.8, 80.9);
+    start(env({ fetch: capture, geolocation }));
+    byId('use-location', HTMLButtonElement).click();
+    byId('planner', HTMLFormElement).requestSubmit();
+    await settle();
+    byId('f-location-name', HTMLInputElement).value = 'Patna';
+    byId('f-location-name', HTMLInputElement).dispatchEvent(new Event('input'));
+    byId('planner', HTMLFormElement).requestSubmit();
+    await settle();
+    expect(bodies.map((body) => (JSON.parse(body) as { location: unknown }).location)).toEqual([
+      { kind: 'coords', latitude: 26.8, longitude: 80.9 },
+      { kind: 'name', name: 'Patna' },
+    ]);
   });
 
   it('shows server field errors in the summary', async () => {
@@ -137,9 +171,9 @@ describe('the page', () => {
     );
     const writeText = vi.fn(() => Promise.resolve());
     for (const clipboard of [
-      { writeText } as unknown as Clipboard,
+      { writeText },
       undefined,
-      { writeText: () => Promise.reject(new Error('denied')) } as unknown as Clipboard,
+      { writeText: () => Promise.reject(new Error('denied')) },
     ]) {
       loadPage();
       const page = env({ clipboard });
