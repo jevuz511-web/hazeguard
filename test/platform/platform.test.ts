@@ -6,7 +6,7 @@ describe('loadConfig', () => {
   it('uses safe defaults and runs without a key', () => {
     expect(loadConfig({})).toEqual({
       apiKey: null,
-      models: ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'],
+      models: ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.6-flash'],
       modelTimeoutMs: 15_000,
       airTimeoutMs: 8000,
       port: 8080,
