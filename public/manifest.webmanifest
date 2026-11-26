@@ -1,0 +1,9 @@
+{
+  "name": "HazeGuard smog-season planner",
+  "short_name": "HazeGuard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#0b4d47",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

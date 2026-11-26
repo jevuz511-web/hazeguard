@@ -1,0 +1,7 @@
+# Secret scanning rules used in CI: gitleaks defaults plus one exception for fake test keys.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake keys used only in tests"
+regexes = ['''AQ\.(test-key|secret|key)''']

@@ -1,0 +1,119 @@
+/* The planner form: fieldsets, inputs, choices, trip rows and error messages. */
+.planner {
+  display: grid;
+  gap: var(--space);
+}
+
+fieldset {
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space) 1.25rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+legend {
+  padding-inline: 0.4rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+label,
+.label {
+  display: block;
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+input[type='text'],
+input[type='number'],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  min-height: 2.75rem;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+[aria-invalid='true'] {
+  border-color: var(--error);
+  border-width: 3px;
+}
+
+.choices {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+.choice input {
+  width: 1.4rem;
+  height: 1.4rem;
+  accent-color: var(--accent);
+}
+
+.req {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.trip-list {
+  display: grid;
+  gap: var(--space);
+  margin: var(--space) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trip fieldset {
+  background: var(--paper);
+}
+
+.field-error {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.error-summary {
+  padding: var(--space) 1.25rem;
+  border: 3px solid var(--error);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.error-summary h2 {
+  margin-top: 0;
+  color: var(--error);
+}
+
+.error-summary a {
+  color: var(--error);
+}
+
+.status {
+  min-height: 1.6em;
+  font-weight: 600;
+}
+
+.callout {
+  padding: var(--space);
+  border-inline-start: 6px solid var(--accent);
+  background: var(--surface);
+}

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HazeGuard: smog-season plan for your home and neighbourhood</title>
+    <meta
+      name="description"
+      content="Live air forecast, cleaner trips, indoor air fixes and a community notice for winter smog, with every impact explained."
+    />
+    <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101517" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/app.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the planner</a>
+    <header class="masthead">
+      <p class="brand"><span aria-hidden="true" class="brand-mark"></span>HazeGuard</p>
+      <h1>Plan your household’s smog season</h1>
+      <p class="lede">
+        Tell us where you live, who is at home and how you get around. You get the air forecast for
+        the next day, cleaner times and ways to travel, the indoor fixes that matter most for your
+        home, and exactly how much each change saves.
+      </p>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <noscript>
+        <p class="callout">HazeGuard needs JavaScript to fetch the live air forecast.</p>
+      </noscript>
+
+      <form id="planner" class="planner" novalidate aria-describedby="form-note">
+        <p id="form-note" class="hint">
+          Questions marked “required” must be answered. Everything else improves the plan.
+        </p>
+        <div id="error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
+          <h2 id="error-title">Please check these answers</h2>
+          <ul id="error-list"></ul>
+        </div>
+
+        <fieldset>
+          <legend>Where you live</legend>
+          <label for="f-location-name"
+            >City or neighbourhood <span class="req">(required)</span></label
+          >
+          <p id="f-location-name-hint" class="hint">For example: Lucknow, Gurugram or Patna.</p>
+          <input
+            id="f-location-name"
+            name="location.name"
+            type="text"
+            autocomplete="address-level2"
+            maxlength="80"
+            required
+            aria-describedby="f-location-name-hint f-location-name-error"
+          />
+          <p id="f-location-name-error" class="field-error" hidden></p>
+          <button id="use-location" type="button" class="button secondary">
+            Use my current location
+          </button>
+          <p id="location-status" class="hint" role="status"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Who lives at home</legend>
+          <p id="members-hint" class="hint">
+            Tick everyone who applies. These people get extra protection.
+          </p>
+          <div class="choices" role="group" aria-describedby="members-hint">
+            <label class="choice"
+              ><input type="checkbox" name="members" value="child" /> Children under 12</label
+            >
+            <label class="choice"
+              ><input type="checkbox" name="members" value="older-adult" /> Adults over 60</label
+            >
+            <label class="choice"
+              ><input type="checkbox" name="members" value="respiratory" /> Someone with asthma,
+              lung or heart disease</label
+            >
+            <label class="choice"
+              ><input type="checkbox" name="members" value="pregnant" /> Someone who is
+              pregnant</label
+            >
+            <label class="choice"
+              ><input type="checkbox" name="members" value="outdoor-worker" /> Someone who works
+              outdoors</label
+            >
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Your home</legend>
+          <label for="f-home-cooking">Main cooking fuel</label>
+          <select id="f-home-cooking" name="home.cooking">
+            <option value="lpg">LPG cylinder</option>
+            <option value="piped-gas">Piped gas</option>
+            <option value="induction">Induction or electric</option>
+            <option value="biomass">Wood, dung or coal</option>
+            <option value="kerosene">Kerosene</option>
+          </select>
+          <label for="f-home-heating">Winter heating</label>
+          <select id="f-home-heating" name="home.heating">
+            <option value="none">None</option>
+            <option value="electric">Electric heater</option>
+            <option value="gas">Gas heater</option>
+            <option value="kerosene">Kerosene heater</option>
+            <option value="wood-or-coal">Wood, coal or angithi</option>
+          </select>
+          <div class="choices">
+            <label class="choice"
+              ><input type="checkbox" name="home.purifier" /> We have an air purifier</label
+            >
+            <label class="choice"
+              ><input type="checkbox" name="home.smoker" /> Someone smokes indoors</label
+            >
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Regular trips</legend>
+          <p id="trips-hint" class="hint">
+            Add up to five one-way trips you make most weeks, such as the school run or the commute.
+          </p>
+          <ol id="trip-list" class="trip-list" aria-describedby="trips-hint"></ol>
+          <button id="add-trip" type="button" class="button secondary">Add a trip</button>
+          <p id="trip-status" class="visually-hidden" role="status"></p>
+          <div class="choices" role="group" aria-labelledby="transit-label">
+            <p id="transit-label" class="label">Within a 10-minute walk of home</p>
+            <label class="choice"><input type="checkbox" name="transit.bus" /> A bus stop</label>
+            <label class="choice"
+              ><input type="checkbox" name="transit.metro" /> A metro station</label
+            >
+          </div>
+          <label for="f-flexHours">How much can trip times move?</label>
+          <select id="f-flexHours" name="flexHours">
+            <option value="0">Not at all</option>
+            <option value="1" selected>Up to 1 hour</option>
+            <option value="2">Up to 2 hours</option>
+            <option value="3">Up to 3 hours</option>
+          </select>
+        </fieldset>
+
+        <fieldset>
+          <legend>Who the plan is for</legend>
+          <div class="choices">
+            <label class="choice"
+              ><input type="radio" name="audience.kind" value="household" checked /> Just our
+              household</label
+            >
+            <label class="choice"
+              ><input type="radio" name="audience.kind" value="community" /> Our household and a
+              community we belong to</label
+            >
+          </div>
+          <div id="community-fields" hidden>
+            <label for="f-audience-setting">Community</label>
+            <select id="f-audience-setting" name="audience.setting">
+              <option value="residents">Residents’ welfare association</option>
+              <option value="school">School</option>
+              <option value="workplace">Workplace</option>
+            </select>
+            <label for="f-audience-people">How many people?</label>
+            <p id="f-audience-people-hint" class="hint">Used to show the combined impact.</p>
+            <input
+              id="f-audience-people"
+              name="audience.people"
+              type="number"
+              inputmode="numeric"
+              min="2"
+              max="100000"
+              value="200"
+              aria-describedby="f-audience-people-hint f-audience-people-error"
+            />
+            <p id="f-audience-people-error" class="field-error" hidden></p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Your plan</legend>
+          <label for="f-language">Language of the advice</label>
+          <select id="f-language" name="language">
+            <option value="en">English</option>
+            <option value="hi" lang="hi">हिन्दी (Hindi)</option>
+          </select>
+          <label for="f-note">Anything else we should know?</label>
+          <p id="f-note-hint" class="hint">
+            Optional, up to 280 characters. Do not include names or contact details.
+          </p>
+          <textarea
+            id="f-note"
+            name="note"
+            rows="3"
+            maxlength="280"
+            aria-describedby="f-note-hint f-note-error"
+          ></textarea>
+          <p id="f-note-error" class="field-error" hidden></p>
+        </fieldset>
+
+        <button id="submit" type="submit" class="button primary">Make my plan</button>
+        <p id="form-status" class="status" role="status" aria-live="polite"></p>
+      </form>
+
+      <section id="plan" class="plan" aria-labelledby="plan-title" tabindex="-1" hidden>
+        <h2 id="plan-title">Your smog-season plan</h2>
+        <p id="plan-meta" class="meta"></p>
+        <ul id="plan-notices" class="notices"></ul>
+        <p id="plan-summary" class="summary"></p>
+        <div id="plan-air"></div>
+        <div id="plan-impact"></div>
+        <div id="plan-trips"></div>
+        <div id="plan-actions"></div>
+        <div id="plan-notice"></div>
+        <details class="method">
+          <summary>How these numbers were worked out</summary>
+          <div id="plan-method"></div>
+        </details>
+        <div class="plan-tools">
+          <button id="print-plan" type="button" class="button secondary">
+            Print or save as PDF
+          </button>
+          <button id="clear-plan" type="button" class="button secondary">Clear saved plan</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Air data: Open-Meteo (Copernicus CAMS). Index: India’s National Air Quality Index (CPCB).
+        Advice is general guidance, not medical advice.
+      </p>
+    </footer>
+
+    <template id="tpl-trip">
+      <li class="trip">
+        <fieldset>
+          <legend data-slot="legend">Trip</legend>
+          <label data-for="label">What is this trip?</label>
+          <input data-name="label" type="text" maxlength="40" placeholder="School run" required />
+          <label data-for="km">Distance in km</label>
+          <input
+            data-name="km"
+            type="number"
+            inputmode="decimal"
+            min="0.1"
+            max="150"
+            step="0.1"
+            value="5"
+            required
+          />
+          <label data-for="mode">Usually by</label>
+          <select data-name="mode">
+            <option value="car">Car (alone)</option>
+            <option value="carpool">Carpool</option>
+            <option value="motorbike">Motorbike or scooter</option>
+            <option value="bus">Bus</option>
+            <option value="metro">Metro</option>
+            <option value="cycle">Cycle</option>
+            <option value="walk">Walk</option>
+          </select>
+          <label data-for="departHour">Usual start time</label>
+          <select data-name="departHour" data-hours></select>
+          <label data-for="perWeek">Times a week</label>
+          <input
+            data-name="perWeek"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="14"
+            value="5"
+            required
+          />
+          <button type="button" class="button link" data-remove>Remove trip</button>
+        </fieldset>
+      </li>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "name": "hazeguard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HazeGuard: a Gemini-powered smog-season coach that turns live air forecasts into cleaner trips, indoor air fixes and community notices, with every impact number computed and explained.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node dist/server.js",
+    "dev": "node scripts/build.mjs && node --env-file-if-exists=.env dist/server.js",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write . && eslint --fix .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "eval": "vitest run --config vitest.eval.config.ts",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@google/genai": "3.6.1",
+    "@hono/node-server": "2.1.11",
+    "hono": "4.13.22",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/jsdom": "30.0.0",
+    "@types/node": "22.20.7",
+    "@vitest/coverage-v8": "5.1.2",
+    "axe-core": "4.14.1",
+    "esbuild": "0.28.2",
+    "eslint": "10.15.0",
+    "eslint-plugin-sonarjs": "4.2.3",
+    "globals": "17.14.0",
+    "jsdom": "29.1.1",
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.74.0",
+    "vitest": "5.1.2"
+  }
+}

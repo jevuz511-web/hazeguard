@@ -1,0 +1,237 @@
+/* The plan: cards, air reading and strip, trip table, impact figures, checklist and notice. */
+.plan {
+  margin-top: 2.5rem;
+}
+
+.card {
+  margin-top: var(--space);
+  padding: var(--space) 1.25rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+.summary {
+  font-size: 1.15rem;
+}
+
+.notices li {
+  font-weight: 600;
+}
+
+.reading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  width: fit-content;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  color: var(--ink);
+}
+
+.reading-index {
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.reading-band {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.band-good {
+  background: var(--band-good);
+}
+.band-satisfactory {
+  background: var(--band-satisfactory);
+}
+.band-moderate {
+  background: var(--band-moderate);
+}
+.band-poor {
+  background: var(--band-poor);
+}
+.band-very-poor {
+  background: var(--band-very-poor);
+}
+.band-severe {
+  background: var(--band-severe);
+}
+
+.strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 6rem;
+  margin: var(--space) 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 2px solid var(--line);
+}
+
+.strip .bar {
+  flex: 1;
+  height: var(--level, 4%);
+  border-radius: 2px 2px 0 0;
+}
+
+.strip .band-good {
+  background: var(--bar-good);
+}
+.strip .band-satisfactory {
+  background: var(--bar-satisfactory);
+}
+.strip .band-moderate {
+  background: var(--bar-moderate);
+}
+.strip .band-poor {
+  background: var(--bar-poor);
+}
+.strip .band-very-poor {
+  background: var(--bar-very-poor);
+}
+.strip .band-severe {
+  background: var(--bar-severe);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+caption {
+  text-align: start;
+  font-weight: 700;
+  padding-bottom: 0.5rem;
+}
+
+th,
+td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  text-align: start;
+  vertical-align: top;
+}
+
+.why {
+  color: var(--muted);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space);
+}
+
+.figure-value {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.figure-caption {
+  margin: 0;
+}
+
+.actions {
+  padding: 0;
+  list-style: none;
+}
+
+.action {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.action input {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.2rem;
+  accent-color: var(--accent);
+}
+
+.action > :not(input, label) {
+  grid-column: 2;
+  margin: 0.25rem 0 0;
+}
+
+.cost {
+  width: fit-content;
+  padding: 0 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  font-size: 0.9rem;
+}
+
+.notice-sheet {
+  padding: var(--space) 1.25rem;
+  border: 2px dashed var(--line);
+  border-radius: var(--radius);
+}
+
+.notice-sheet h4 {
+  margin-top: 0;
+}
+
+.method {
+  margin-top: var(--space);
+}
+
+summary {
+  min-height: 2.75rem;
+  padding-block: 0.5rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.plan-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 60rem) {
+  .planner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .planner > :is(.hint, .error-summary, button, .status) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media print {
+  .masthead,
+  .planner,
+  .plan-tools,
+  .skip,
+  [data-copy] {
+    display: none;
+  }
+
+  .card {
+    break-inside: avoid;
+    border-color: #000;
+  }
+}
+
+.action label {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-weight: 600;
+}

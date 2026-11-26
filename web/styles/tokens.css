@@ -1,0 +1,55 @@
+/* Design tokens. Every text pairing meets WCAG AAA (7:1); test/web/contrast.test.ts checks it. */
+:root {
+  color-scheme: light dark;
+  --paper: #f4f1ea;
+  --surface: #ffffff;
+  --ink: #15191c;
+  --muted: #3d464c;
+  --line: #5c666c;
+  --accent: #0b4d47;
+  --on-accent: #ffffff;
+  --error: #8f1d1d;
+  --focus: #0b4d47;
+  --band-good: #cfe8d4;
+  --band-satisfactory: #e4edc4;
+  --band-moderate: #f6e7a8;
+  --band-poor: #f7cfa3;
+  --band-very-poor: #f0b1aa;
+  --band-severe: #d9b3d6;
+  --bar-good: #2e7d4f;
+  --bar-satisfactory: #6c7f1b;
+  --bar-moderate: #9a7800;
+  --bar-poor: #b35600;
+  --bar-very-poor: #b3261e;
+  --bar-severe: #6d1b4f;
+  --radius: 0.5rem;
+  --space: 1rem;
+  --measure: 68ch;
+  --font: system-ui, -apple-system, 'Segoe UI', 'Noto Sans', 'Noto Sans Devanagari', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #101517;
+    --surface: #182024;
+    --ink: #eef1ef;
+    --muted: #c3ccd0;
+    --line: #8d989d;
+    --accent: #8fd8cf;
+    --on-accent: #0c1416;
+    --error: #ffb4ab;
+    --focus: #8fd8cf;
+    --band-good: #1f3d2a;
+    --band-satisfactory: #34391a;
+    --band-moderate: #46390e;
+    --band-poor: #4d2c10;
+    --band-very-poor: #4f1c19;
+    --band-severe: #3f1a37;
+    --bar-good: #5fbf85;
+    --bar-satisfactory: #b5c95a;
+    --bar-moderate: #e0c04a;
+    --bar-poor: #f0954a;
+    --bar-very-poor: #f2726a;
+    --bar-severe: #d78ac0;
+  }
+}

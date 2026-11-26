@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.vercel/
+vercel-static/
+.env
+.env.*
+!.env.example
+submission/
+*.log
+.vitest/

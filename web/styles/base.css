@@ -1,0 +1,148 @@
+/* Page frame, type, links, focus and the shared button styles. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 1.0625rem/1.6 var(--font);
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+  margin: 1.5em 0 0.5em;
+}
+
+p,
+li,
+label,
+legend {
+  max-width: var(--measure);
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.15em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.skip {
+  position: absolute;
+  inset-inline-start: var(--space);
+  top: -10rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  color: var(--ink);
+  z-index: 1;
+}
+
+.skip:focus {
+  top: var(--space);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.masthead,
+main,
+.footer {
+  width: min(100% - 2rem, 72rem);
+  margin-inline: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.5rem 0 0;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brand-mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 50%, var(--bar-moderate) 50%);
+}
+
+.masthead h1 {
+  margin-top: 0.5rem;
+  font-size: clamp(1.75rem, 4vw + 1rem, 2.75rem);
+}
+
+.lede {
+  font-size: 1.15rem;
+  color: var(--muted);
+}
+
+.footer {
+  margin-block: 3rem 2rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.button {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.6rem 1.2rem;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.button.secondary {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.button.link {
+  border-color: transparent;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.button:disabled {
+  cursor: progress;
+  border-style: dashed;
+}
+
+.hint,
+.meta {
+  color: var(--muted);
+  margin: 0.25rem 0 0.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
