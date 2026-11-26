@@ -43,6 +43,10 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Origin-Agent-Cluster': '?1',
+  'X-Permitted-Cross-Domain-Policies': 'none',
+  'X-DNS-Prefetch-Control': 'off',
 };
 
 /** Adds the security headers to every response, including errors. */

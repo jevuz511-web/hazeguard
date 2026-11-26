@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import type { Assessment } from '../domain/assessment';
 import type { Audience } from '../domain/household';
+import { hasUnsafeCharacters } from './text-safety';
 
 /** Limits on what a model may write; long enough to be useful, short enough to read. */
 export const WRITING_LIMITS = {
@@ -18,14 +19,15 @@ export const WRITING_LIMITS = {
 
 const { chars, picks } = WRITING_LIMITS;
 
-/** Words a model may write; digits are banned so every number comes from the code. */
+/** Words a model may write: no digits (numbers come from the code) and no hidden characters. */
 const prose = (max: number) =>
   z
     .string()
     .trim()
     .min(1)
     .max(max)
-    .refine((text) => !/\p{Nd}/u.test(text), { error: 'must not contain digits' });
+    .refine((text) => !/\p{Nd}/u.test(text), { error: 'must not contain digits' })
+    .refine((text) => !hasUnsafeCharacters(text), { error: 'must not contain control characters' });
 
 /** Shape of a model reply. */
 export const TailoringSchema = z.object({

@@ -1,25 +1,14 @@
 /**
- * The plan use case: fetch the forecast, compute the assessment, then ask each Gemini
- * model in turn for the writing. A rejected reply is repaired by the next model; if all
- * fail, the rules write the plan, so a household always gets advice.
+ * The plan use case: fetch the forecast, compute the assessment, screen the note, then get
+ * the writing from Gemini (see model-writer.ts). If every model fails, the rules write the
+ * plan, so a household always gets advice.
  */
 import { type Assessment, assess } from '../domain/assessment';
 import type { Audience, Household, Language } from '../domain/household';
-import {
-  type BriefInput,
-  SYSTEM_INSTRUCTION,
-  buildPrompt,
-  looksLikeSteering,
-  withRepairNotes,
-} from './brief';
+import { type BriefInput, looksLikeSteering } from './brief';
+import { type Writer, type Written, writeWithModels } from './model-writer';
 import type { AirSource, LocationQuery, Logger, TextModel } from './ports';
-import {
-  TAILORING_JSON_SCHEMA,
-  TailoringSchema,
-  type Writing,
-  reviewTailoring,
-  writeByRules,
-} from './tailoring';
+import { type Writing, writeByRules } from './tailoring';
 
 /** A validated plan request. */
 export interface PlanRequest {
@@ -58,79 +47,6 @@ export interface CoachOptions {
 /** Builds plans. */
 export interface Coach {
   plan(request: PlanRequest): Promise<Plan>;
-}
-
-/** A model and the order to try models in. */
-interface Writer {
-  readonly model: TextModel;
-  readonly models: readonly string[];
-  readonly logger: Logger;
-}
-
-/** Text a model wrote and which model wrote it. */
-interface Written {
-  readonly writing: Writing;
-  readonly model: string;
-}
-
-type Attempt = { readonly writing: Writing } | { readonly problems: readonly string[] };
-
-function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-/** Error name and HTTP status (when the SDK reports one) for logs; never the message, which may echo input. */
-export function describeFailure(error: unknown): { reason: string; status?: number } {
-  if (!(error instanceof Error)) return { reason: 'unknown' };
-  const status: unknown = Reflect.get(error, 'status');
-  return typeof status === 'number' ? { reason: error.name, status } : { reason: error.name };
-}
-
-/** One model call, judged against the schema and the assessment. */
-async function attempt(
-  writer: Writer,
-  input: BriefInput,
-  call: { model: string; prompt: string },
-): Promise<Attempt> {
-  try {
-    const text = await writer.model.generate({
-      ...call,
-      system: SYSTEM_INSTRUCTION,
-      schema: TAILORING_JSON_SCHEMA,
-    });
-    const parsed = TailoringSchema.safeParse(parseJson(text));
-    if (!parsed.success) {
-      return {
-        problems: parsed.error.issues
-          .slice(0, 5)
-          .map((issue) => `${issue.path.join('.')}: ${issue.message}`),
-      };
-    }
-    const problems = reviewTailoring(parsed.data, input.assessment, input.audience);
-    return problems.length === 0 ? { writing: parsed.data } : { problems };
-  } catch (error) {
-    writer.logger.warn('model.failed', { model: call.model, ...describeFailure(error) });
-    return { problems: [] };
-  }
-}
-
-/** Tries each configured model in order, passing rejections on as repair notes. */
-async function writeWithModels(writer: Writer, input: BriefInput): Promise<Written | null> {
-  const base = buildPrompt(input);
-  let prompt = base;
-  for (const model of writer.models) {
-    const result = await attempt(writer, input, { model, prompt });
-    if ('writing' in result) return { writing: result.writing, model };
-    if (result.problems.length > 0) {
-      writer.logger.warn('model.rejected', { model, problems: result.problems.length });
-      prompt = withRepairNotes(base, result.problems);
-    }
-  }
-  return null;
 }
 
 /** Drops a note that tries to steer the model, remembering that it did. */

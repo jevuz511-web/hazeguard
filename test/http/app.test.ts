@@ -16,6 +16,7 @@ describe('POST /api/plan', () => {
       "require-trusted-types-for 'script'",
     );
     expect(response.headers.get('x-frame-options')).toBe('DENY');
+    expect(response.headers.get('cross-origin-embedder-policy')).toBe('require-corp');
   });
 
   it('tags every response with a request id and logs how each plan was made', async () => {

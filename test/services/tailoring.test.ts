@@ -18,6 +18,12 @@ describe('TailoringSchema', () => {
     expect(TailoringSchema.safeParse(JSON.parse(goodReply())).success).toBe(true);
   });
 
+  it('rejects hidden control and direction-override characters in model text', () => {
+    const override = String.fromCodePoint(0x202e);
+    const reply = { ...(JSON.parse(goodReply()) as object), summary: `Safe${override}text` };
+    expect(TailoringSchema.safeParse(reply).success).toBe(false);
+  });
+
   it('rejects digits in any language, so numbers only come from the code', () => {
     expect(
       TailoringSchema.safeParse({

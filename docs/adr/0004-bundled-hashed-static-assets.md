@@ -9,7 +9,7 @@ The page should load fast on mid-range phones and slow networks. The app must al
 
 ## Decision
 
-- **Build:** `scripts/build.mjs` uses esbuild to bundle and minify the browser TypeScript and CSS into one file each, named with a content hash.
+- **Build:** `scripts/build.ts` uses esbuild to bundle and minify the browser TypeScript and CSS into one file each, named with a content hash.
 - **Serve:** at startup, `src/http/assets.ts` reads the built files once, precompresses them with Brotli (quality 11) and gzip (level 9), and serves them from memory with ETags.
 - **Cache:** hashed files are cached for a year as `immutable`; the HTML is revalidated.
 - **Vercel:** every path is rewritten to one function, so the same middleware runs everywhere.

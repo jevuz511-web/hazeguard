@@ -52,6 +52,8 @@ These boundaries are **tested**: `test/quality/conventions.test.ts` reads every 
   - Handlers only dispatch events, so every rule is unit-tested without a DOM.
 - **Interface segregation.** The page asks for exactly what it uses (`Send`, `Locator`, `PlanStorage`, `Pick<Clipboard, 'writeText'>`), so fakes need no casts.
 - **One place for wording.** Every sentence the page writes lives in `web/copy.ts`. Renderers and controllers hold no prose.
+- **Small, single-purpose modules.** The plan use case (`services/coach.ts`, 90 lines) is separate from the model loop with its checks and repair prompts (`services/model-writer.ts`, 83 lines). Text safety is one shared rule (`services/text-safety.ts`) used for both user input and model output.
+- **TypeScript everywhere it runs.** The build script is `scripts/build.ts`, type-checked and linted like the app and run with Node's built-in type stripping. The only JavaScript left is the ESLint config and the one-line Vercel entry.
 - **Traceable requests.** Each response carries `X-Request-Id`, and `plan.created` and `request.failed` logs include it, along with the author and timing.
 - **Decisions are recorded.** Architecture decision records in [docs/adr](docs/adr/README.md) explain why, and [docs/API.md](docs/API.md) is the HTTP contract.
 
@@ -75,7 +77,7 @@ TypeScript runs with `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexed
 
 ## Measured
 
-- **Size:** 53 TypeScript source files, about 3,800 lines including docs and formatting; the largest module is 168 lines.
+- **Size:** 56 TypeScript source files (including the build script), about 3,900 lines including docs and formatting; the largest module is 166 lines (catalogue data).
 - **Duplication:** 0 exact clones across `src`, `web` and `test` (jscpd, 50-token minimum, 85 files).
 - **Checks:** ESLint with SonarJS reports 0 issues, and `tsc --noEmit` reports 0 errors, tests included.
 - **Assertions:** 0 type assertions in `src/` and `web/` outside the five unit constructors. Tests use them only to read parsed JSON replies and matcher placeholders.

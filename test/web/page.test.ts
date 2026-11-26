@@ -96,7 +96,9 @@ describe('the page', () => {
     start(page);
     byId('f-location-name', HTMLInputElement).value = 'Lucknow';
     byId('planner', HTMLFormElement).requestSubmit();
+    expect(byId('planner', HTMLFormElement).getAttribute('aria-busy')).toBe('true');
     await settle();
+    expect(byId('planner', HTMLFormElement).getAttribute('aria-busy')).toBe('false');
     expect(byId('form-status', HTMLElement).textContent).toBe('Your plan is ready below.');
     expect(document.activeElement).toBe(byId('plan', HTMLElement));
     expect(await axeViolations()).toEqual([]);

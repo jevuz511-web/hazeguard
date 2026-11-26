@@ -1,6 +1,6 @@
 {
   "name": "hazeguard",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "HazeGuard: a Gemini-powered smog-season coach that turns live air forecasts into cleaner trips, indoor air fixes and community notices, with every impact number computed and explained.",
   "homepage": "https://hazeguard-blush.vercel.app",
@@ -14,9 +14,9 @@
     "node": "22.x"
   },
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/build.ts",
     "start": "node dist/server.js",
-    "dev": "node scripts/build.mjs && node --env-file-if-exists=.env dist/server.js",
+    "dev": "npm run build && node --env-file-if-exists=.env dist/server.js",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write . && eslint --fix .",
     "typecheck": "tsc --noEmit",

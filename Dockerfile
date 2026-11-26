@@ -17,7 +17,7 @@ WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:8ad9cc935b7843c4024b7e1487b5ef472c354ea847b97c667023e2618552607e
+FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:c73ddeb03e1dc2d579aa111c83d6699c6b8b487e35c0c631d4a3a20229fc25ee
 WORKDIR /app
 ENV NODE_ENV=production PORT=8080
 COPY --from=runtime-deps /app/node_modules ./node_modules

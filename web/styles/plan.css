@@ -131,6 +131,12 @@ td {
   gap: var(--space);
 }
 
+.figure {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+}
+
 .figure-value {
   margin: 0;
   font-size: 2rem;
@@ -234,4 +240,37 @@ summary {
   align-items: center;
   min-height: 2.75rem;
   font-weight: 600;
+}
+
+/* Windows high-contrast and other forced-colour modes: keep every boundary and band visible. */
+@media (forced-colors: active) {
+  .card,
+  fieldset,
+  .reading,
+  .cost,
+  .notice-sheet {
+    border: 1px solid CanvasText;
+  }
+
+  .strip .bar {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+
+  .button.primary {
+    border-color: ButtonText;
+  }
+}
+
+/* Users who ask for more contrast get heavier lines and plain ink for secondary text. */
+@media (prefers-contrast: more) {
+  :root {
+    --muted: var(--ink);
+    --line: var(--ink);
+  }
+
+  .card,
+  fieldset {
+    border-width: 2px;
+  }
 }

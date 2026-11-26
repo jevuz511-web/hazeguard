@@ -10,14 +10,25 @@ updates:
       development:
         dependency-type: development
     ignore:
-      # Node 22 is the deployed runtime; type definitions must match it.
+      # The runtime is Node 22 LTS; these majors need a newer Node 22.x than the minimum we support.
       - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'jsdom'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint-plugin-jsdoc'
         update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Stay on the Node 22 LTS line; odd-numbered majors are not long-term supported.
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']

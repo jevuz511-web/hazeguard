@@ -7,9 +7,7 @@ import { COOKING_FUELS, HEATING, LANGUAGES, MEMBERS, SETTINGS } from '../domain/
 import { MODES } from '../domain/modes';
 import { kilometres } from '../domain/units';
 import type { PlanRequest } from '../services/coach';
-
-/** Control characters and invisible direction overrides (Trojan Source); ZWJ/ZWNJ stay allowed for Indic scripts. */
-const UNSAFE_CHARACTERS = /[\p{Cc}\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/u;
+import { hasUnsafeCharacters } from '../services/text-safety';
 
 const text = (max: number) =>
   z
@@ -17,7 +15,7 @@ const text = (max: number) =>
     .trim()
     .min(1, 'Please fill this in.')
     .max(max, `Keep this under ${String(max)} characters.`)
-    .refine((value) => !UNSAFE_CHARACTERS.test(value), 'Remove hidden control characters.');
+    .refine((value) => !hasUnsafeCharacters(value), 'Remove hidden control characters.');
 
 const TripSchema = z.strictObject({
   label: text(40),

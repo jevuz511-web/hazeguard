@@ -18,7 +18,7 @@
 - **Precompressed, in-memory static files** (`src/http/assets.ts`).
   - Every file is read once at startup and compressed with Brotli (quality 11) and gzip (level 9).
   - Requests are answered from memory with content negotiation (`q=0` honoured), ETags and `Vary: Accept-Encoding`.
-- **Content-hashed bundles** are built by esbuild (`scripts/build.mjs`). They change name when their content changes, so they are cached for a year.
+- **Content-hashed bundles** are built by esbuild (`scripts/build.ts`). They change name when their content changes, so they are cached for a year.
 - **Caches for upstream data** (`src/adapters/ttl-cache.ts`):
   - Geocoding results are kept for 6 hours and forecasts for 20 minutes.
   - Both are keyed by place and rounded coordinates, and capped at 500 entries with oldest-first eviction.

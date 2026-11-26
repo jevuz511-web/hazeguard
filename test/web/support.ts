@@ -62,14 +62,25 @@ export function memoryStorage(broken = false): Storage {
   };
 }
 
-/** axe-core violations for WCAG A/AA rules and best practices (contrast is checked separately). */
+/** axe-core violations for every WCAG A, AA and AAA rule, best practices and experimental rules. */
 export async function axeViolations(): Promise<string[]> {
   const result = await axe.run(document, {
     runOnly: {
       type: 'tag',
-      values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'],
+      values: [
+        'wcag2a',
+        'wcag2aa',
+        'wcag2aaa',
+        'wcag21a',
+        'wcag21aa',
+        'wcag21aaa',
+        'wcag22aa',
+        'best-practice',
+        'experimental',
+      ],
     },
-    rules: { 'color-contrast': { enabled: false } },
+    // jsdom has no layout, so contrast is checked from the CSS tokens in contrast.test.ts.
+    rules: { 'color-contrast': { enabled: false }, 'color-contrast-enhanced': { enabled: false } },
   });
   return result.violations.map(
     (violation) =>

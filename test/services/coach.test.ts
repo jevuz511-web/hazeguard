@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@google/genai';
-import { createCoach, describeFailure } from '../../src/services/coach';
+import { createCoach } from '../../src/services/coach';
+import { describeFailure } from '../../src/services/model-writer';
 import { Problem } from '../../src/services/problem';
 import { fixedAir, goodReply, memoryLogger, planRequest, scriptedModel } from '../fixtures';
 

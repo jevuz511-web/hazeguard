@@ -28,7 +28,7 @@ const LAYERS: Record<string, RegExp> = {
   'src/services/': /^(\.\/[\w-]+|\.\.\/domain\/[\w-]+|zod)$/u,
   'src/adapters/':
     /^(\.\/[\w-]+|\.\.\/domain\/units|\.\.\/services\/(problem|ports)|zod|@google\/genai)$/u,
-  'src/platform/': /^(zod)$/u,
+  'src/platform/': /^(zod|node:\w+)$/u,
   'src/http/': /^(\.\/[\w-]+|\.\.\/(domain|services)\/[\w-]+|zod|hono\/?[\w-]*|node:\w+)$/u,
   'web/': /^(\.\/[\w-]+|\.\.\/src\/domain\/[\w-]+)$/u,
 };

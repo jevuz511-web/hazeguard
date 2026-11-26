@@ -26,9 +26,16 @@ function status(message: string): void {
   byId('form-status', HTMLElement).textContent = message;
 }
 
-/** Applies the side effects of a state change: the busy button, storage and rendering. */
+/** Marks the form and plan busy for assistive technology while a plan is being made. */
+function showBusy(busy: boolean): void {
+  byId('submit', HTMLButtonElement).disabled = busy;
+  for (const id of ['planner', 'plan'])
+    byId(id, HTMLElement).setAttribute('aria-busy', String(busy));
+}
+
+/** Applies the side effects of a state change: the busy state, storage and rendering. */
 function applyChange(env: PageEnv, next: PageState, previous: PageState): void {
-  byId('submit', HTMLButtonElement).disabled = next.busy;
+  showBusy(next.busy);
   if (next.saved === previous.saved) return;
   if (next.saved === null) {
     forget(env.storage);

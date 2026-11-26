@@ -4,12 +4,13 @@ import { IMPACT, SECTIONS } from './copy';
 import { h } from './dom';
 import { count, kg } from './format';
 
+/** One figure as a term (what it measures) and its value; CSS shows the value first. */
 function figure(value: string, caption: string): HTMLElement {
   return h(
     'div',
     { class: 'figure' },
-    h('p', { class: 'figure-value' }, value),
-    h('p', { class: 'figure-caption' }, caption),
+    h('dt', { class: 'figure-caption' }, caption),
+    h('dd', { class: 'figure-value' }, value),
   );
 }
 
@@ -38,6 +39,6 @@ export function renderImpact(
     'section',
     { class: 'card impact', 'aria-labelledby': 'impact-title' },
     h('h3', { id: 'impact-title' }, SECTIONS.impact),
-    h('div', { class: 'figures' }, ...figures),
+    h('dl', { class: 'figures' }, ...figures),
   );
 }

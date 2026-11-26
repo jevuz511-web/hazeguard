@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/platform/config';
 import { createLogger } from '../../src/platform/logger';
@@ -31,6 +34,42 @@ describe('loadConfig', () => {
       port: 3000,
       trustedProxies: 1,
     });
+  });
+
+  it('prefers a key from a mounted secret file', () => {
+    const files: string[] = [];
+    const read = (path: string) => {
+      files.push(path);
+      return '  AQ.secret-from-file  ';
+    };
+    const config = loadConfig(
+      { GEMINI_API_KEY: 'AQ.key', GEMINI_API_KEY_FILE: '/run/secrets/gemini' },
+      read,
+    );
+    expect(config.apiKey).toBe('AQ.secret-from-file');
+    expect(files).toEqual(['/run/secrets/gemini']);
+    expect(loadConfig({ GEMINI_API_KEY_FILE: '/empty' }, () => ' ').apiKey).toBeNull();
+  });
+
+  it('reads the secret file from disk by default', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hazeguard-secret-'));
+    try {
+      writeFileSync(join(dir, 'key'), ' AQ.secret-on-disk ');
+      expect(loadConfig({ GEMINI_API_KEY_FILE: join(dir, 'key') }).apiKey).toBe(
+        'AQ.secret-on-disk',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails clearly when the secret file cannot be read', () => {
+    const missing = () => {
+      throw new Error('ENOENT');
+    };
+    expect(() => loadConfig({ GEMINI_API_KEY_FILE: '/missing' }, missing)).toThrow(
+      'GEMINI_API_KEY_FILE could not be read',
+    );
   });
 
   it('names bad variables without echoing their values', () => {

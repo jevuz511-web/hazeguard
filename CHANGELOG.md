@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.0, 2026-11-26
+
+### Accessibility
+
+- **Impact figures:** now a description list, so no bold paragraph looks like a heading (axe `p-as-heading`).
+- **Busy state:** the form and plan carry `aria-busy` while a plan is being made.
+- **Contrast modes:** forced-colours (Windows high contrast) and `prefers-contrast: more` styles.
+- **Wider audits:** the axe tests run every A, AA and AAA rule plus best-practice and experimental rules. A real-browser audit adds AAA enhanced contrast.
+
+### Security
+
+- **Model text screening:** Gemini text is screened for control and bidi-override characters with the same rule as user input.
+- **Key file:** `GEMINI_API_KEY_FILE` reads the key from a mounted secret.
+- **New headers:** `Cross-Origin-Embedder-Policy: require-corp` (the page is cross-origin isolated), `Origin-Agent-Cluster`, `X-Permitted-Cross-Domain-Policies` and `X-DNS-Prefetch-Control`.
+- **Dependency updates:** CodeQL actions v4.39.4 and a refreshed distroless image digest. Dependabot ignores majors that leave Node 22 LTS.
+
+### Code quality
+
+- **Smaller coach:** the model loop moved from `services/coach.ts` to `services/model-writer.ts`.
+- **TypeScript build script:** it is now `scripts/build.ts`, type-checked and linted, and it also writes Vercel's placeholder folder.
+
 ## 1.1.0, 2026-11-26
 
 ### Changed
