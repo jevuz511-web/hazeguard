@@ -9,7 +9,7 @@ HazeGuard is a Gemini-powered assistant for families and communities living thro
 
 Every choice comes with its direct impact: kilograms of CO₂ saved a week, and how much less PM2.5 your lungs take in.
 
-**Live demo:** _add the deployment URL here_ · **Stack:** TypeScript, Hono, Gemini (`@google/genai`), Open-Meteo, Vitest
+**Live demo:** https://hazeguard-blush.vercel.app · **Stack:** TypeScript, Hono, Gemini (`@google/genai`), Open-Meteo, Vitest
 
 ---
 

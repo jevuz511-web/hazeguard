@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "description": "HazeGuard: a Gemini-powered smog-season coach that turns live air forecasts into cleaner trips, indoor air fixes and community notices, with every impact number computed and explained.",
+  "homepage": "https://hazeguard-blush.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jevuz511-web/hazeguard.git"
+  },
   "license": "MIT",
   "type": "module",
   "engines": {
